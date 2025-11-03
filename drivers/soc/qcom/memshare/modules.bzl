@@ -46,5 +46,6 @@ def register_modules(registry):
             "drivers/virt/gunyah/gh_dbl",
             "arch/arm64/gunyah/gh_arm_drv",
             "drivers/soc/qcom/qcom_ramdump",
+            "//vendor/qcom/sm8850-modules/oplus/kernel/boot:oplusboot",
         ],
     )

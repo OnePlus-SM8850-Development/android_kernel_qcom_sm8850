@@ -45,6 +45,10 @@
 #define MINIDUMP_SS_ENCR_DONE		('D' << 24 | 'O' << 16 | 'N' << 8 | 'E' << 0)
 #define MINIDUMP_SS_ENABLED		('E' << 24 | 'N' << 16 | 'B' << 8 | 'L' << 0)
 
+#ifdef OPLUS_FEATURE_MODEM_MINIDUMP
+bool SKIP_GENERATE_RAMDUMP = false;
+EXPORT_SYMBOL(SKIP_GENERATE_RAMDUMP);
+#endif
 /**
  * struct minidump_region - Minidump region
  * @name		: Name of the region to be dumped
@@ -160,6 +164,8 @@ static void qcom_minidump_cleanup(struct rproc *rproc)
 {
 	struct rproc_dump_segment *entry, *tmp;
 
+	dev_err(&rproc->dev, "qcom_minidump_cleanup: for %s\n", rproc->name);
+
 	list_for_each_entry_safe(entry, tmp, &rproc->dump_segments, node) {
 		list_del(&entry->node);
 		kfree(entry->priv);
@@ -246,6 +252,8 @@ static void qcom_rproc_minidump(struct rproc *rproc, struct device *md_dev)
 		return;
 	}
 
+	dev_err(&rproc->dev, "qcom_rproc_minidump  %d, We allocate two extra section headers. The first one is null\n", list_empty(&rproc->dump_segments));
+
 	/*
 	 * We allocate two extra section headers. The first one is null.
 	 * Second section header is for the string table. Also space is
@@ -325,6 +333,8 @@ static void qcom_rproc_minidump(struct rproc *rproc, struct device *md_dev)
 		shdr += elf_size_of_shdr(class);
 	}
 
+	dev_err(&rproc->dev, "qcom_rproc_minidump,dev_coredumpv.\n");
+
 	dev_coredumpv(md_dev, data, data_size, GFP_KERNEL);
 }
 
@@ -344,8 +354,39 @@ void qcom_minidump(struct rproc *rproc, struct device *md_dev, unsigned int mini
 		return;
 	}
 
+	#ifdef OPLUS_FEATURE_MODEM_MINIDUMP
+	 //Add for customized subsystem ramdump to skip generate dump cause by SAU
+	 if (SKIP_GENERATE_RAMDUMP) {
+		dev_err(&rproc->dev, "Skip ramdump cuase by ap normal trigger.\n");
+		SKIP_GENERATE_RAMDUMP = false;
+		goto clean_minidump;;
+	 }
+	#endif
+
 	/* Get subsystem table of contents using the minidump id */
 	subsystem = &toc->subsystems[minidump_id];
+
+	#ifdef OPLUS_FEATURE_MODEM_MINIDUMP
+	dev_err(&rproc->dev, "qcom_minidump: minidump_global_toc->status is 0x%x\n",
+		(unsigned int)le32_to_cpu(toc->status));
+	dev_err(&rproc->dev, "qcom_minidump: minidump_global_toc->md_revision is 0x%x\n",
+		(unsigned int)le32_to_cpu(toc->md_revision));
+	dev_err(&rproc->dev, "qcom_minidump: minidump_global_toc->enabled is 0x%x\n",
+		(unsigned int)le32_to_cpu(toc->enabled));
+
+	dev_err(&rproc->dev, "qcom_minidump: modem minidump_subsystem->status is 0x%x\n",
+		(unsigned int)le32_to_cpu(subsystem->status));
+	dev_err(&rproc->dev, "qcom_minidump: modem minidump_subsystem->enabled is 0x%x\n",
+		(unsigned int)le32_to_cpu(subsystem->enabled));
+	dev_err(&rproc->dev, "qcom_minidump: modem minidump_subsystem->encryption_status is 0x%x\n",
+		(unsigned int)le32_to_cpu(subsystem->encryption_status));
+	dev_err(&rproc->dev, "qcom_minidump: modem minidump_subsystem->encryption_required is 0x%x\n",
+		(unsigned int)le32_to_cpu(subsystem->encryption_required));
+	dev_err(&rproc->dev, "qcom_minidump: modem minidump_subsystem->region_count is 0x%x\n",
+		(unsigned int)le32_to_cpu(subsystem->region_count));
+	dev_err(&rproc->dev, "qcom_minidump: modem minidump_subsystem->regions_baseptr is 0x%x\n",
+		(unsigned int)subsystem->regions_baseptr);
+	#endif
 
 	/**
 	 * Collect minidump if SS ToC is valid and segment table
@@ -354,6 +395,17 @@ void qcom_minidump(struct rproc *rproc, struct device *md_dev, unsigned int mini
 	if (subsystem->regions_baseptr == 0 ||
 	    le32_to_cpu(subsystem->status) != 1 ||
 	    le32_to_cpu(subsystem->enabled) != MINIDUMP_SS_ENABLED) {
+
+		#ifdef OPLUS_FEATURE_MODEM_MINIDUMP
+			dev_err(&rproc->dev, "qcom_minidump: modem minidump_subsystem->status is 0x%x\n",
+				(unsigned int)le32_to_cpu(subsystem->status));
+			dev_err(&rproc->dev, "qcom_minidump: modem minidump_subsystem->enabled is 0x%x\n",
+				(unsigned int)le32_to_cpu(subsystem->enabled));
+			dev_err(&rproc->dev, "qcom_minidump: modem minidump_subsystem->regions_baseptr is 0x%x\n",
+				(unsigned int)subsystem->regions_baseptr);
+			dev_err(&rproc->dev, "Continuing with full SSR dump\n");
+		#endif
+
 		return rproc_coredump(rproc);
 	}
 
@@ -363,6 +415,9 @@ void qcom_minidump(struct rproc *rproc, struct device *md_dev, unsigned int mini
 
 	if (le32_to_cpu(subsystem->encryption_status) != MINIDUMP_SS_ENCR_DONE)
 		dev_err(&rproc->dev, "encryption_status != MINIDUMP_SS_ENCR_DONE\n");
+
+	dev_err(&rproc->dev, "qcom_minidump: rproc->elf_class is 0x%x, elf_machine is 0x%x\n", (unsigned int)rproc->elf_class, (unsigned int)rproc->elf_machine);
+	dev_err(&rproc->dev, "qcom_minidump: rproc->dump_conf is 0x%x\n", (unsigned int)rproc->dump_conf);
 
 	/**
 	 * Clear out the dump segments populated by parse_fw before
@@ -375,6 +430,8 @@ void qcom_minidump(struct rproc *rproc, struct device *md_dev, unsigned int mini
 		dev_err(&rproc->dev, "Failed with error: %d while adding minidump entries\n", ret);
 		goto clean_minidump;
 	}
+
+	dev_err(&rproc->dev, "dump_segments empty %d\n", list_empty(&rproc->dump_segments));
 
 	if (rproc->elf_class == ELFCLASS64)
 		qcom_rproc_minidump(rproc, md_dev);

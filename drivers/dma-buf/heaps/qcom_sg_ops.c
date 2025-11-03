@@ -34,6 +34,9 @@
 #include <linux/qti-smmu-proxy-callbacks.h>
 
 #include "qcom_sg_ops.h"
+#include "qcom_dma_trace.h"
+#include "../../../drivers/soc/qcom/mem_buf/mem-buf-dev.h"
+
 
 int proxy_invalid_map(struct device *dev, struct sg_table *table,
 		      struct dma_buf *dmabuf)
@@ -572,7 +575,20 @@ EXPORT_SYMBOL_GPL(qcom_sg_buffer_init);
 void qcom_sg_release(void *buffer)
 {
 	struct qcom_sg_buffer *buf = (struct qcom_sg_buffer *)buffer;
+
+	struct dma_buf *dmabuf = buf->vmperm->dmabuf;
+	trace_qcom_dma_free(buf->len, dmabuf->__kabi_reserved2, dmabuf->exp_name?:"NULL");
 	mem_buf_vmperm_free(buf->vmperm);
+
+#if IS_ENABLED(CONFIG_QCOM_DMABUF_HEAPS_SYSTEM) && IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE)
+	if (is_system_heap_deferred_free(buf->free)) {
+		if (atomic64_sub_return(buf->len, &qcom_system_heap_total) < 0) {
+			pr_info("warn: %s, total memory underflow, 0x%lld!!, reset as 0\n",
+				__func__, atomic64_read(&qcom_system_heap_total));
+			atomic64_set(&qcom_system_heap_total, 0);
+		}
+	}
+#endif /* CONFIG_QCOM_DMABUF_HEAPS_SYSTEM */
 	if (buf->free)
 		buf->free(buf);
 }
@@ -652,4 +668,3 @@ int qti_smmu_proxy_register_callbacks(smmu_proxy_map_sgtable map_sgtable_fn_ptr,
 	return 0;
 }
 EXPORT_SYMBOL(qti_smmu_proxy_register_callbacks);
-

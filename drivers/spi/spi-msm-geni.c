@@ -26,9 +26,14 @@
 #include <linux/pinctrl/consumer.h>
 
 #define SPI_NUM_CHIPSELECT	(4)
-#define SPI_XFER_TIMEOUT_MS	(250)
+// #ifdef OPLUS_FEATURE_SENSOR
+/* modify timeout to 6s for oplus_consumer_ir spi mode */
+// #define SPI_XFER_TIMEOUT_MS	(250)
+#define SPI_XFER_TIMEOUT_MS	(6000)
 #define SPI_AUTO_SUSPEND_DELAY	(250)
-#define SPI_XFER_TIMEOUT_OFFSET	(250)
+// #define SPI_XFER_TIMEOUT_OFFSET	(250)
+#define SPI_XFER_TIMEOUT_OFFSET	(6000)
+// #endif OPLUS_FEATURE_SENSOR
 #define SPI_SLAVE_SYNC_XFER_TIMEOUT_OFFSET	(50)
 
 /* SPI SE specific registers */
@@ -2228,6 +2233,11 @@ static int spi_geni_mas_setup(struct spi_controller *spi)
 				goto setup_ipc;
 			}
 		}
+
+#ifdef OPLUS_FEATURE_CHG_BASIC
+		gpi_set_cpu_affinity(mas->tx);
+#endif
+
 		mas->tx_event.init.callback = spi_gsi_ch_cb;
 		mas->tx_event.init.cb_param = spi;
 		mas->tx_event.cmd = MSM_GPI_INIT;
@@ -3918,4 +3928,3 @@ module_exit(spi_dev_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_ALIAS("platform:spi_geni");
-

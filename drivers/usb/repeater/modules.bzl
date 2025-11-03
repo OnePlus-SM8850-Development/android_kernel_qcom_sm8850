@@ -21,6 +21,9 @@ def register_modules(registry):
             # do not sort
             "drivers/usb/repeater/repeater",
         ],
+        local_defines = [
+            "OPLUS_FEATURE_CHG_BASIC"
+        ],
     )
 
     registry.register(

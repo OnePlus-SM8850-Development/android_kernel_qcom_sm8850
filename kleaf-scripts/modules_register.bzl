@@ -70,9 +70,12 @@ def _generate_ddk_target(
     ddk_config(
         name = "{}_config".format(target_variant),
         defconfig = ":{}_defconfig".format(target_variant),
-        kconfigs = [":kconfig.msm.generated"],
+        kconfigs = [
+            ":kconfig.msm.generated",
+            "//vendor/qcom/sm8850-modules/oplus/kernel/charger/bazel:kconfig.oplus_chg.generated"],
         kernel_build = ":{}_base_kernel".format(target_variant),
         deps = ddk_config_deps,
+        visibility = ["//visibility:public"],
     )
 
     if config_path:
@@ -120,6 +123,11 @@ def _generate_ddk_target(
 
         deps = module_deps + library_deps
         deps += [":{}_{}".format(target_variant, dep) for dep in module.hook_deps]
+
+        # Preserve external Oplus module dependencies.
+        for dep in module.deps:
+            if dep.startswith("//vendor/qcom/sm8850-modules/oplus"):
+                deps.append(dep.replace("{target_variant}", target_variant))
         src_hdrs = [src for src in module.srcs if src.endswith(".h")]
         includes = (module.includes or []) + {paths.dirname(hdr): "" for hdr in src_hdrs}.keys()
 
@@ -148,7 +156,22 @@ def _generate_ddk_target(
         )
     kernel_module_group(
         name = "{}_all_modules".format(target_variant),
-        srcs = module_names.values(),
+        srcs = module_names.values() + [
+            "//vendor/qcom/sm8850-modules/oplus/kernel/storage:ufs-oplus-dbg",
+            "//vendor/qcom/sm8850-modules/oplus/kernel/device_info/device_info/bazel:device_info",
+            "//vendor/qcom/sm8850-modules/oplus/kernel/storage:oplus_bsp_storage_io_metrics",
+            "//vendor/qcom/sm8850-modules/oplus/kernel/storage:storage_log",
+            "//vendor/qcom/sm8850-modules/oplus/kernel/storage:oplus_uprobe",
+            "//vendor/qcom/sm8850-modules/oplus/kernel/storage:oplus_file_record",
+            "//vendor/qcom/sm8850-modules/oplus/kernel/boot:oplus_bsp_dfr_qcom_enhance_watchdog",
+            "//vendor/qcom/sm8850-modules/oplus/kernel/cpu:oplus_bsp_sched_assist",
+            "//vendor/qcom/sm8850-modules/oplus/kernel/cpu:oplus_bsp_frame_boost",
+            "//vendor/qcom/sm8850-modules/oplus/kernel/cpu:oplus_bsp_geas_system",
+            "//vendor/qcom/sm8850-modules/oplus/kernel/mm:oplus_bsp_mm_osvelte",
+            "//vendor/qcom/sm8850-modules/oplus/kernel/cpu:cpufreq_bouncing",
+            "//vendor/qcom/sm8850-modules/oplus/kernel/cpu:oplus_bsp_task_overload",
+            "//vendor/qcom/sm8850-modules/oplus/kernel/storage:oplus_wq_dynamic_priority",
+        ],
         visibility = ["//visibility:public"],
     )
 

@@ -9,6 +9,7 @@ def register_modules(registry):
             "drivers/thermal/qcom/qti_bcl_stats.c",
             "drivers/thermal/qcom/qti_bcl_common.h",
             "drivers/thermal/qcom/thermal_zone_internal.h",
+            "drivers/thermal/qcom/trace.h",
         ],
         deps = [
             # do not sort

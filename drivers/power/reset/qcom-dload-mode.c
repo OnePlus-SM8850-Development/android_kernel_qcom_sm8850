@@ -368,6 +368,7 @@ static int qcom_dload_reboot(struct notifier_block *this, unsigned long event,
 
 	if (cmd && !strcmp(cmd, "edl")) {
 		poweroff->in_reboot_edl = true;
+		qcom_scm_disable_sdi();
 		set_download_mode(QCOM_DOWNLOAD_EDL);
 		if (poweroff->in_reboot_edl) {
 			ret = enable_regulators(poweroff);
