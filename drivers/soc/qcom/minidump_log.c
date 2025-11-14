@@ -151,7 +151,7 @@ static struct seq_buf *md_ktask_stack_buf;
 
 /* Modules information */
 #ifdef CONFIG_MODULES
-#define MD_MODULE_PAGES	  8
+#define MD_MODULE_PAGES	  16
 static struct seq_buf *md_mod_info_seq_buf;
 static DEFINE_SPINLOCK(md_modules_lock);
 

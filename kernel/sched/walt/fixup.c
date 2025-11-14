@@ -245,11 +245,6 @@ static void inject_sleep(struct walt_task_struct *wts)
 	u64 current_ts = 0;
 	u64 frame = 0, delta = 0, sleep_nsec = 0;
 
-#if IS_ENABLED(CONFIG_OPLUS_FEATURE_PIPELINE)
-	if (sysctl_yielder_disable)
-		return;
-#endif
-
 	/* special handling for sleep injection without frame calculations */
 	if (!sysctl_force_frequent_yielder) {
 		per_cpu(walt_yield_to_sleep, raw_smp_processor_id())++;
@@ -293,6 +288,11 @@ static void inject_sleep(struct walt_task_struct *wts)
 static void walt_do_sched_yield_before(void *unused, long *skip)
 {
 	struct walt_task_struct *wts = (struct walt_task_struct *)android_task_vendor_data(current);
+
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_PIPELINE)
+	if (sysctl_yielder_disable)
+		return;
+#endif
 
 	if (unlikely(walt_disabled))
 		return;
