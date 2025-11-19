@@ -21,6 +21,9 @@
 
 #include "zcomp.h"
 
+/* force disable ZRAM_WRITEBACK, otherwise GKI defconfig will impact */
+#undef CONFIG_ZRAM_WRITEBACK
+
 #define SECTORS_PER_PAGE_SHIFT	(PAGE_SHIFT - SECTOR_SHIFT)
 #define SECTORS_PER_PAGE	(1 << SECTORS_PER_PAGE_SHIFT)
 #define ZRAM_LOGICAL_BLOCK_SHIFT 12

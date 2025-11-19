@@ -52,6 +52,9 @@
 #include "mm_osvelte/mm-config.h"
 #endif
 
+/* force disable ZRAM_WRITEBACK, otherwise GKI defconfig will impact */
+#undef CONFIG_ZRAM_WRITEBACK
+
 static DEFINE_IDR(zram_index_idr);
 /* idr index must be protected */
 static DEFINE_MUTEX(zram_index_mutex);
