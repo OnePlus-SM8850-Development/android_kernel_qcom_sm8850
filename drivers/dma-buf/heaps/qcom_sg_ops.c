@@ -32,6 +32,10 @@
 #include <linux/qcom_dma_heap.h>
 #include <linux/msm_dma_iommu_mapping.h>
 #include <linux/qti-smmu-proxy-callbacks.h>
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_AIZEROCOPY)
+#include "aizerofs/aizerofs_shrink.h"
+#include "../../../drivers/soc/qcom/mem_buf/mem-buf-dev.h"
+#endif
 
 #include "qcom_sg_ops.h"
 #include "qcom_dma_trace.h"
@@ -578,6 +582,24 @@ void qcom_sg_release(void *buffer)
 
 	struct dma_buf *dmabuf = buf->vmperm->dmabuf;
 	trace_qcom_dma_free(buf->len, dmabuf->__kabi_reserved2, dmabuf->exp_name?:"NULL");
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_AIZEROCOPY)
+	if (handle_dbuf_cache_release(dmabuf)) {
+		dmabuf_caches_destroy_all();
+		sg_free_table(&buf->sg_table);
+		mem_buf_vmperm_free(buf->vmperm);
+#if IS_ENABLED(CONFIG_QCOM_DMABUF_HEAPS_SYSTEM) && IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE)
+		if (is_system_heap_deferred_free(buf->free)) {
+			if (atomic64_sub_return(buf->len, &qcom_system_heap_total) < 0) {
+				pr_info("warn: %s, total memory underflow, 0x%lld!!, reset as 0\n",
+					__func__, atomic64_read(&qcom_system_heap_total));
+				atomic64_set(&qcom_system_heap_total, 0);
+			}
+		}
+#endif /* CONFIG_QCOM_DMABUF_HEAPS_SYSTEM */
+		kfree(buf);
+		return;
+	}
+#endif
 	mem_buf_vmperm_free(buf->vmperm);
 
 #if IS_ENABLED(CONFIG_QCOM_DMABUF_HEAPS_SYSTEM) && IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE)

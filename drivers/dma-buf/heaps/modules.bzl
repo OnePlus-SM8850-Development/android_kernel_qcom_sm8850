@@ -19,6 +19,7 @@ def register_modules(registry):
             "drivers/dma-buf/heaps/qcom_system_movable_heap.h",
             "drivers/dma-buf/heaps/deferred-free-helper.h",
             "drivers/dma-buf/heaps/qcom_dma_trace.h",
+            "drivers/dma-buf/heaps/aizerofs/aizerofs_shrink.h",
             "drivers/soc/qcom/mem_buf/mem-buf-dev.h"
         ],
         conditional_srcs = {
@@ -98,6 +99,7 @@ def register_modules(registry):
             "arch/arm64/gunyah/gh_arm_drv",
             "drivers/dma-buf/heaps/deferred-free-helper",
             "//vendor/qcom/sm8850-modules/oplus/kernel/mm:oplus_bsp_mm_osvelte",
+            "drivers/dma-buf/heaps/aizerofs",
         ],
     )
     registry.register(
@@ -108,5 +110,17 @@ def register_modules(registry):
             # do not sort
             "drivers/dma-buf/heaps/deferred-free-helper.c",
             "drivers/dma-buf/heaps/deferred-free-helper.h",
+        ],
+    )
+    registry.register(
+        name = "drivers/dma-buf/heaps/aizerofs",
+        out = "oplus_bsp_aizerofs.ko",
+        config = "CONFIG_OPLUS_FEATURE_AIZEROCOPY",
+        srcs = [
+            # do not sort
+            "drivers/dma-buf/heaps/aizerofs/aizerofs.c",
+            "drivers/dma-buf/heaps/aizerofs/aizerofs_internal.h",
+            "drivers/dma-buf/heaps/aizerofs/aizerofs_shrink.c",
+            "drivers/dma-buf/heaps/aizerofs/aizerofs_shrink.h",
         ],
     )

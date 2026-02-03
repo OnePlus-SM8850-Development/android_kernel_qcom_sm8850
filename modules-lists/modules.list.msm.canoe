@@ -149,3 +149,4 @@ cpufreq_bouncing.ko
 oplus_bsp_task_overload.ko
 i2c-msm-geni.ko
 msm_gpi.ko
+oplus_bsp_aizerofs.ko
