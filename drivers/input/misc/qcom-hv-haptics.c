@@ -36,7 +36,7 @@
 #include <linux/soc/qcom/qcom_hv_haptics.h>
 
 #ifdef CONFIG_HAPTIC_FEEDBACK_MODULE
-#include "../../misc/vibrator/haptic_feedback/haptic_feedback.h"
+#include "haptic_feedback/haptic_feedback.h"
 #endif
 
 #ifndef OPLUS_FEATURE_CHG_BASIC
@@ -7618,7 +7618,7 @@ static int richtap_file_release(struct inode *inode, struct file *file)
 }
 
 #ifdef OPLUS_FEATURE_CHG_BASIC
-#define RICHTAP_MIN_PULSE_US		40000
+#define RICHTAP_MIN_PULSE_US		75000
 #define RICHTAP_DELAY_US_MIN		8000
 #define RICHTAP_DELAY_US_MAX		12000
 #endif
@@ -7719,15 +7719,31 @@ static long richtap_file_unlocked_ioctl(struct file *file, unsigned int cmd, uns
 	case RICHTAP_STOP_MODE:
 #ifdef OPLUS_FEATURE_CHG_BASIC
 		if (chip->he_optimization_support) {
-			chip->richtap_kcur_time = ktime_get();
-			chip->richtap_interval_us =
-				ktime_to_us(ktime_sub(chip->richtap_kcur_time,
-						      chip->richtap_kpre_time));
-			if (chip->richtap_interval_us < RICHTAP_MIN_PULSE_US) {
-				dev_info(chip->dev, "%s: interval_us = %u < %u, delay stop\n",
-					__func__, chip->richtap_interval_us,
-					RICHTAP_MIN_PULSE_US);
-				usleep_range(RICHTAP_DELAY_US_MIN, RICHTAP_DELAY_US_MAX);
+			while (1) {
+				/* Acquire lock to safely read pattern_src */
+				mutex_lock(&play->lock);
+				if ((chip->play.pattern_src == FIFO) &&
+					atomic_read(&chip->play.fifo_status.is_busy)) {
+					mutex_unlock(&play->lock);
+					dev_info(chip->dev, "here fifo is busy playing, need wait\n");
+					chip->richtap_kcur_time = ktime_get();
+					chip->richtap_interval_us =
+					ktime_to_us(ktime_sub(chip->richtap_kcur_time,
+								  chip->richtap_kpre_time));
+					if (chip->richtap_interval_us > RICHTAP_MIN_PULSE_US) {
+						dev_info(chip->dev, "%s: interval_us = %u > %u, delay stop and break\n",
+							__func__, chip->richtap_interval_us,
+							RICHTAP_MIN_PULSE_US);
+						break;
+					}
+					dev_info(chip->dev, "%s: interval_us = %u < %u, wait\n",
+							__func__, chip->richtap_interval_us,
+							RICHTAP_MIN_PULSE_US);
+					usleep_range(RICHTAP_DELAY_US_MIN, RICHTAP_DELAY_US_MAX);
+				} else {
+					mutex_unlock(&play->lock);
+					break;
+				}
 			}
 		}
 #endif

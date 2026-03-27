@@ -136,3 +136,7 @@ arm_smmu_pmu.ko
 deferred-free-helper.ko
 i2c-msm-geni.ko
 msm_gpi.ko
+oplus_bsp_bootmode.ko
+oplus_ftm_mode.ko
+oplusboot.ko
+oplus_charger_present.ko

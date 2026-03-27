@@ -1,3 +1,5 @@
+load(":soc_repo_path.bzl", "SOC_MODULES_REPO_PATH")
+
 def register_modules(registry):
     registry.register(
         name = "drivers/i2c/busses/i2c-msm-geni",
@@ -24,6 +26,8 @@ def register_modules(registry):
             "drivers/virt/gunyah/gh_msgq",
             "drivers/virt/gunyah/gh_dbl",
             "arch/arm64/gunyah/gh_arm_drv",
+            "//" + SOC_MODULES_REPO_PATH + "/oplus/kernel/device_info/device_info/bazel:device_info",
+            "//" + SOC_MODULES_REPO_PATH + "/oplus/kernel/boot:oplus_bsp_bootmode",
         ],
         local_defines = [
             "OPLUS_FEATURE_CHG_BASIC"

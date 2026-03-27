@@ -1,10 +1,12 @@
 load(":soc_repo_path.bzl", "SOC_MODULES_REPO_PATH")
 load(":drivers/leds/flash/modules.bzl", register_flash = "register_modules")
 load(":drivers/leds/rgb/modules.bzl", register_rgb = "register_modules")
+load(":drivers/leds/aw210xx/modules.bzl", register_aw210xx= "register_modules")
 
 def register_modules(registry):
     register_flash(registry)
     register_rgb(registry)
+    register_aw210xx(registry)
 
     registry.register(
         name = "drivers/leds/leds-qti-flash",

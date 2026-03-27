@@ -60,6 +60,8 @@ source "$(KCONFIG_EXT_PREFIX)drivers/irqchip/Kconfig"
 
 source "$(KCONFIG_EXT_PREFIX)drivers/leds/Kconfig"
 
+source "$(KCONFIG_EXT_PREFIX)drivers/leds/aw210xx/Kconfig"
+
 source "$(KCONFIG_EXT_PREFIX)drivers/mailbox/Kconfig"
 
 source "$(KCONFIG_EXT_PREFIX)drivers/mfd/Kconfig"
