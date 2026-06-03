@@ -32,6 +32,9 @@ struct qcom_sg_buffer {
 	struct mem_buf_vmperm *vmperm;
 	struct deferred_freelist_item deferred_free;
 	void (*free)(struct qcom_sg_buffer *buffer);
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_AIZEROCOPY)
+	bool release_via_cache; /* set in qcom_sg_dmabuf_release when dmabuf valid */
+#endif
 };
 
 struct dma_heap_attachment {

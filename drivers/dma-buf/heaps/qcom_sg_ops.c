@@ -572,6 +572,9 @@ void qcom_sg_buffer_init(struct qcom_sg_buffer *buffer)
 {
 	INIT_LIST_HEAD(&buffer->attachments);
 	mutex_init(&buffer->lock);
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_AIZEROCOPY)
+	buffer->release_via_cache = false;
+#endif
 }
 EXPORT_SYMBOL_GPL(qcom_sg_buffer_init);
 
@@ -580,10 +583,8 @@ void qcom_sg_release(void *buffer)
 {
 	struct qcom_sg_buffer *buf = (struct qcom_sg_buffer *)buffer;
 
-	struct dma_buf *dmabuf = buf->vmperm->dmabuf;
-	trace_qcom_dma_free(buf->len, dmabuf->__kabi_reserved2, dmabuf->exp_name?:"NULL");
 #if IS_ENABLED(CONFIG_OPLUS_FEATURE_AIZEROCOPY)
-	if (handle_dbuf_cache_release(dmabuf)) {
+	if (buf->release_via_cache) {
 		dmabuf_caches_destroy_all();
 		sg_free_table(&buf->sg_table);
 		mem_buf_vmperm_free(buf->vmperm);
@@ -649,6 +650,12 @@ void qcom_sg_dmabuf_release(struct dma_buf *dmabuf)
 {
 	struct qcom_sg_buffer *buffer = dmabuf->priv;
 
+	trace_qcom_dma_free(buffer->len, dmabuf->__kabi_reserved2,
+			    dmabuf->exp_name ? : "NULL");
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_AIZEROCOPY)
+	if (handle_dbuf_cache_release(dmabuf))
+		buffer->release_via_cache = true;
+#endif
 	qcom_sg_exit(buffer);
 }
 EXPORT_SYMBOL_GPL(qcom_sg_dmabuf_release);

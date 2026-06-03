@@ -67,6 +67,8 @@
 
 #if IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE)
 #include "mm_osvelte/mm-trace.h"
+#include "mm_osvelte/common.h"
+#include "mm_osvelte/sys-memstat.h"
 #endif /* CONFIG_OPLUS_FEATURE_MM_OSVELTE */
 
 #ifdef CONFIG_OPLUS_FEATURE_MM_BOOSTPOOL
@@ -603,9 +605,11 @@ static struct dma_buf *system_heap_allocate(struct dma_heap *heap,
 	}
 
 #if IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE)
-	mm_trace_fmt_begin("odma-buf: alloc: %s,%lu,%lu",
-			   dma_heap_get_name(heap),
-			   atomic64_read(&qcom_system_heap_total), len);
+	mm_trace_fmt_begin("%d:@%s@%zu@%ld@%ld@%ld",
+			   OMTE_DMA_BUF_ALLOCATION, dma_heap_get_name(heap), len,
+			   read_mtrack_mem_usage(MTRACK_DMABUF, MTRACK_DMABUF_POOL),
+			   read_mtrack_mem_usage(MTRACK_DMABUF, MTRACK_DMABUF_BOOST_POOL),
+			   read_mtrack_mem_usage(MTRACK_DMABUF, MTRACK_DMABUF_SYSTEM_HEAP));
 #endif /* CONFIG_OPLUS_FEATURE_MM_OSVELTE */
 #if IS_ENABLED(CONFIG_OPLUS_FEATURE_AIZEROCOPY)
 	ret = system_qcom_sg_buffer_alloc(heap, buffer, len, false, dbuf_cache);
