@@ -3,6 +3,7 @@
 # Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 
 import argparse
+import ast
 import errno
 import glob
 import logging
@@ -11,11 +12,15 @@ import re
 import sys
 import subprocess
 
+KERNEL_ROOT = os.path.dirname(os.path.realpath(__file__))
+with open(os.path.join(KERNEL_ROOT, "qcom_path.bzl")) as config:
+    QCOM_DIR = ast.literal_eval(config.read().split("=", 1)[1].strip())
+WORKSPACE = os.path.abspath(os.path.join(KERNEL_ROOT, "../" * len(QCOM_DIR.split("/"))))
+
 HOST_TARGETS = ["dtc", "host"]
 DEFAULT_SKIP_LIST = []
 MSM_EXTENSIONS = "build/msm_kernel_extensions.bzl"
 ABL_EXTENSIONS = "build/abl_extensions.bzl"
-DEFAULT_MSM_EXTENSIONS_SRC = "../soc-repo/kleaf-scripts/msm_kernel_extensions.bzl"
 DEFAULT_ABL_EXTENSIONS_SRC = "../bootable/bootloader/edk2/abl_extensions.bzl"
 DEFAULT_OUT_DIR = "{workspace}/out/msm-kernel-{target}-{variant}"
 GH_VARIANTS =["perf", "consolidate"]
@@ -63,16 +68,11 @@ class BazelBuilder:
     """Helper class for building with Bazel"""
 
     def __init__(self, target_list, skip_list, out_dir, cache_dir, dry_run, target_build_variant, user_opts):
-        self.workspace = os.path.realpath(
-            os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
-        )
+        self.process_list = []
+        self.workspace = WORKSPACE
         self.bazel_bin = os.path.join(self.workspace, "tools", "bazel")
-        if not os.path.exists(self.bazel_bin):
-            logging.error("failed to find Bazel binary at %s", self.bazel_bin)
-            sys.exit(1)
-        self.kernel_dir = os.path.basename(
-            (os.path.dirname(os.path.realpath(__file__)))
-        )
+        self.kernel_dir = QCOM_DIR
+        self.kernel_root = os.path.join(self.workspace, self.kernel_dir)
 
         for t, v in target_list:
             if not t or not v:
@@ -85,7 +85,6 @@ class BazelBuilder:
         self.dry_run = dry_run
         self.target_build_variant = target_build_variant
         self.user_opts = user_opts
-        self.process_list = []
         if len(self.target_list) > 1 and out_dir:
             logging.error("cannot specify multiple targets with one out dir")
             sys.exit(1)
@@ -105,7 +104,10 @@ class BazelBuilder:
     def setup_extensions(self):
         """Set up the extension files if needed"""
         for (ext, def_src) in [
-            (MSM_EXTENSIONS, DEFAULT_MSM_EXTENSIONS_SRC),
+            (MSM_EXTENSIONS, os.path.relpath(
+                os.path.join(self.kernel_root, "kleaf-scripts", "msm_kernel_extensions.bzl"),
+                os.path.join(self.workspace, "build"),
+            )),
             (ABL_EXTENSIONS, DEFAULT_ABL_EXTENSIONS_SRC),
         ]:
             ext_path = os.path.join(self.workspace, ext)
@@ -206,7 +208,7 @@ class BazelBuilder:
 
     def clean_legacy_generated_files(self):
         """Clean generated files from legacy build to avoid conflicts with Bazel"""
-        for f in glob.glob("{}/soc-repo/arch/arm64/configs/vendor/*_defconfig".format(self.workspace)):
+        for f in glob.glob(os.path.join(self.kernel_root, "arch/arm64/configs/vendor/*_defconfig")):
             os.remove(f)
 
         f = os.path.join(self.workspace, "bootable", "bootloader", "edk2", "Conf", ".AutoGenIdFile.txt")
@@ -327,7 +329,7 @@ class BazelBuilder:
                 sys.exit(1)
 
         if self.skip_list:
-            self.user_opts.extend(["--//soc-repo:skip_{}=true".format(s) for s in self.skip_list if s != 'abi'])
+            self.user_opts.extend(["--//{}:skip_{}=true".format(self.kernel_dir, s) for s in self.skip_list if s != 'abi'])
 
         self.user_opts.append("--incompatible_sandbox_hermetic_tmp=false")
         self.user_opts.append("--noenable_workspace")
@@ -356,9 +358,7 @@ class BazelBuilder:
             self.run_targets(targets_to_build)
 
 def build_gvm_image(variant):
-    workspace = os.path.realpath(
-        os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
-    )
+    workspace = WORKSPACE
     VM_BOOTLOADER_SRC = os.path.join(
         workspace,
         "prebuilts",
@@ -404,7 +404,7 @@ def main():
         metavar="BUILD_RULE",
         action="append",
         default=[],
-        help="Skip specific build rules (e.g. --skip abl will skip the //soc-repo:<target>_<variant>_abl build)",
+        help="Skip specific build rules (e.g. --skip abl will skip the ABL build for the selected target and variant)",
     )
     parser.add_argument(
         "-o",

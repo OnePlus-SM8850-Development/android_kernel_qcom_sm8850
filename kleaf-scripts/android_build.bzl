@@ -1,6 +1,7 @@
+load(":qcom_path.bzl", "qcom_dir")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("//build:msm_kernel_extensions.bzl", "define_extras", "export_init_boot_prebuilt", "get_vendor_ramdisk_binaries")
+load(":kleaf-scripts/msm_kernel_extensions.bzl", "define_extras", "export_init_boot_prebuilt", "get_vendor_ramdisk_binaries")
 load("//build/bazel_common_rules/dist:dist.bzl", "copy_to_dist_dir")
 load("//build/kernel/kleaf:hermetic_tools.bzl", "hermetic_genrule")
 load(
@@ -29,7 +30,8 @@ def define_common_android_rules():
         out = "la.image.config",
         content = [
             "KERNEL_DIR=common",
-            "SOC_DIR=soc-repo",
+            "qcom_dir={}".format(qcom_dir),
+            "SOC_DIR=${qcom_dir}",
             "KERNEL_BINARY=Image",
             "DO_NOT_STRIP_MODULES=0",
             "",
@@ -406,7 +408,7 @@ def define_typical_android_build(
             } | perf_kwargs,
             "consolidate": {
                 "config_fragment": consolidate_config,
-                "base_kernel": "//soc-repo:kernel_aarch64_consolidate",
+                "base_kernel": ":kernel_aarch64_consolidate",
                 "build_img_opts": consolidate_build_img_opts,
                 "ddk_config_deps": [common_info],
                 "implicit_config_fragment": perf_config,

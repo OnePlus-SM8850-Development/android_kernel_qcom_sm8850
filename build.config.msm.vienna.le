@@ -1,7 +1,8 @@
 ################################################################################
 ## Inheriting configs from ACK
-. "${ROOT_DIR}/soc-repo/build.config.common"
-. "${ROOT_DIR}/soc-repo/build.config.aarch64"
+[ -n "${qcom_dir}" ] || . "$(dirname "${BASH_SOURCE[0]}")/qcom_path.bzl"
+. "${ROOT_DIR}/${qcom_dir}/build.config.common"
+. "${ROOT_DIR}/${qcom_dir}/build.config.aarch64"
 
 #################################################################################
 ## Target and Variant setup
