@@ -1,3 +1,4 @@
+load(":soc_repo_path.bzl", "SOC_REPO_PATH")
 load(
     ":kleaf-scripts/msm_kernel_extensions.bzl",
     "define_extras",
@@ -17,7 +18,7 @@ load(":kleaf-scripts/image_opts.bzl", "vm_image_opts")
 load(":qcom_modules.bzl", "registry")
 
 def define_make_vm_dtb_img(target, dtb_list, page_size):
-    compiled_dtbs = ["//soc-repo:{}_dtb_build/{}".format(target, t) for t in dtb_list]
+    compiled_dtbs = ["//" + SOC_REPO_PATH + ":{}_dtb_build/{}".format(target, t) for t in dtb_list]
     dtb_cmd = "compiled_dtb_list=\"{}\"\n".format(" ".join(["$(location {})".format(d) for d in compiled_dtbs]))
     dtb_cmd += """
       set +x
@@ -65,7 +66,7 @@ def define_single_vm_build(
         define_qcom_dtbs(
             stem = name,
             target = dtb_target,
-            defconfig = "//soc-repo:arch/arm64/configs/generic_vm_defconfig",
+            defconfig = "//" + SOC_REPO_PATH + ":arch/arm64/configs/generic_vm_defconfig",
         )
 
     hermetic_genrule(
@@ -190,13 +191,13 @@ def define_typical_vm_build(
         configs = {
             "debug-defconfig": {
                 "config_fragment": debug_config,
-                "base_kernel": "//soc-repo:kernel_aarch64_qtvm_debug",
+                "base_kernel": "//" + SOC_REPO_PATH + ":kernel_aarch64_qtvm_debug",
                 "ddk_config_deps": [common_info],
                 "implicit_config_fragment": config,
             } | debug_kwargs,
             "defconfig": {
                 "config_fragment": config,
-                "base_kernel": "//soc-repo:kernel_aarch64_qtvm",
+                "base_kernel": "//" + SOC_REPO_PATH + ":kernel_aarch64_qtvm",
                 "ddk_config_deps": [common_info],
             } | config_kwargs,
         },

@@ -1,3 +1,4 @@
+load(":soc_repo_path.bzl", "SOC_REPO_PATH")
 load("//build/kernel/kleaf:hermetic_tools.bzl", "hermetic_genrule")
 
 def define_top_level_config(target):
@@ -11,9 +12,10 @@ def define_top_level_config(target):
           cat << 'EOF' > "$@"
 # === define_top_level_config ===
 BUILDING_WITH_BAZEL=true
+SOC_REPO_PATH={soc_repo_path}
 # === end define_top_level_config ===
 EOF
-        """,
+        """.format(soc_repo_path = SOC_REPO_PATH),
     )
 
     return ":{}".format(rule_name)
@@ -43,24 +45,24 @@ def get_out_dir(msm_target, variant):
 def define_signing_keys():
     hermetic_genrule(
         name = "signing_key",
-        srcs = ["//soc-repo:certs/qcom_x509.genkey"],
+        srcs = ["//" + SOC_REPO_PATH + ":certs/qcom_x509.genkey"],
         outs = ["signing_key.pem"],
         tools = ["//prebuilts/build-tools:openssl"],
         cmd = """
           $(location //prebuilts/build-tools:openssl) req -new -nodes -utf8 -sha256 -days 36500 \
-            -batch -x509 -config $(location //msm-kernel:certs/qcom_x509.genkey) \
+            -batch -x509 -config $(location :certs/qcom_x509.genkey) \
             -outform PEM -out "$@" -keyout "$@"
         """,
     )
 
     hermetic_genrule(
         name = "verity_key",
-        srcs = ["//soc-repo:certs/qcom_x509.genkey"],
+        srcs = ["//" + SOC_REPO_PATH + ":certs/qcom_x509.genkey"],
         outs = ["verity_cert.pem", "verity_key.pem"],
         tools = ["//prebuilts/build-tools:openssl"],
         cmd = """
           $(location //prebuilts/build-tools:openssl) req -new -nodes -utf8 -newkey rsa:1024 -days 36500 \
-            -batch -x509 -config $(location //msm-kernel:certs/qcom_x509.genkey) \
+            -batch -x509 -config $(location :certs/qcom_x509.genkey) \
             -outform PEM -out $(location verity_cert.pem) -keyout $(location verity_key.pem)
         """,
     )

@@ -1,3 +1,4 @@
+load(":soc_repo_path.bzl", "SOC_REPO_PATH")
 load(
     ":kleaf-scripts/msm_kernel_extensions.bzl",
     "define_extras",
@@ -13,7 +14,7 @@ load(":kleaf-scripts/msm_dtc.bzl", "define_dtc_dist")
 load(":qcom_modules.bzl", "registry")
 
 def define_make_vm_dtb_img(target, dtb_list, page_size):
-    compiled_dtbs = ["//soc-repo:{}_dtb_build/{}".format(target, t) for t in dtb_list]
+    compiled_dtbs = ["//" + SOC_REPO_PATH + ":{}_dtb_build/{}".format(target, t) for t in dtb_list]
     dtb_cmd = "compiled_dtb_list=\"{}\"\n".format(" ".join(["$(location {})".format(d) for d in compiled_dtbs]))
     dtb_cmd += """
       set +x
@@ -41,7 +42,7 @@ def define_make_vm_dtb_img(target, dtb_list, page_size):
     )
 
 def define_make_vm_dtbo_img(target, dtbo_list):
-    compiled_dtbos = ["//soc-repo:{}_dtb_build/{}".format(target, t) for t in dtbo_list]
+    compiled_dtbos = ["//" + SOC_REPO_PATH + ":{}_dtb_build/{}".format(target, t) for t in dtbo_list]
 
     copy_to_dist_dir(
         name = "{}_vm_dtbo_dist".format(target),
@@ -72,7 +73,7 @@ def define_single_autogvmlv_build(
         define_qcom_dtbs(
             stem = name,
             target = dtb_target,
-            defconfig = "//soc-repo:arch/arm64/configs/generic_auto_defconfig",
+            defconfig = "//" + SOC_REPO_PATH + ":arch/arm64/configs/generic_auto_defconfig",
         )
 
     hermetic_genrule(
@@ -177,13 +178,13 @@ def define_typical_autogvmlv_build(
         configs = {
             "debug-defconfig": {
                 "config_fragment": debug_config,
-                "base_kernel": "//soc-repo:kernel_aarch64_autogvmlv_debug",
+                "base_kernel": "//" + SOC_REPO_PATH + ":kernel_aarch64_autogvmlv_debug",
                 "ddk_config_deps": [common_info],
                 "implicit_config_fragment": config,
             } | debug_kwargs,
             "defconfig": {
                 "config_fragment": config,
-                "base_kernel": "//soc-repo:kernel_aarch64_autogvmlv",
+                "base_kernel": "//" + SOC_REPO_PATH + ":kernel_aarch64_autogvmlv",
                 "ddk_config_deps": [common_info],
             } | config_kwargs,
         },

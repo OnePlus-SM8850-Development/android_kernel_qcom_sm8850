@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 
+load(":soc_repo_path.bzl", "SOC_REPO_PATH")
 load(":kleaf-scripts/msm_kernel_extensions.bzl", "define_top_level_rules")
 load("//build/kernel/kleaf:hermetic_tools.bzl", "hermetic_genrule")
 load("//build/kernel/kleaf:kernel.bzl", "ddk_headers", "ddk_uapi_headers")
@@ -201,7 +202,7 @@ hermetic_genrule(
     name = "kconfig.msm.generated",
     srcs = glob(["**/Kconfig*"]),
     outs = ["Kconfig.ext"],
-    cmd = "KCONFIG_EXT_PREFIX=soc-repo/ $(location flatten_kconfig.sh) $(location Kconfig.msm) >$@",
+    cmd = "KCONFIG_EXT_PREFIX=" + SOC_REPO_PATH + "/ $(location flatten_kconfig.sh) $(location Kconfig.msm) >$@",
     tools = ["flatten_kconfig.sh"],
 )
 

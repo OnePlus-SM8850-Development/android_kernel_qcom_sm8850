@@ -1,3 +1,4 @@
+load(":soc_repo_path.bzl", "SOC_REPO_PATH")
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("//soc-repo/arch/arm64/boot/dts/vendor:qcom/platform_map.bzl", _get_custom_dtbo_img_list = "get_custom_dtbo_img_list", _get_dtb_list = "get_dtb_list", _get_dtbo_list = "get_dtbo_list")
 
@@ -37,7 +38,7 @@ def get_custom_dtbo_img_list(target):
     return _get_custom_dtbo_img_list(target)
 
 def get_dtstree(target):
-    return "//soc-repo/arch/arm64/boot/dts/vendor:msm_dt"
+    return "//" + SOC_REPO_PATH + "/arch/arm64/boot/dts/vendor:msm_dt"
 
 def get_vendor_ramdisk_binaries(target, flavor = None):
     return None
