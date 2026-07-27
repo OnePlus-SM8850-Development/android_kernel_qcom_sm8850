@@ -1,5 +1,5 @@
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("//build:msm_kernel_extensions.bzl", "get_custom_dtbo_img_list", "get_dtb_list", "get_dtbo_list", "get_dtstree")
+load(":kleaf-scripts/msm_kernel_extensions.bzl", "get_custom_dtbo_img_list", "get_dtb_list", "get_dtbo_list", "get_dtstree")
 load("//build/kernel/kleaf:kernel.bzl", "kernel_build", "kernel_build_config")
 
 def define_qcom_dtb_setup():
@@ -8,7 +8,7 @@ def define_qcom_dtb_setup():
         out = "build.config.qcom.dtbs",
         content = [
             "KERNEL_DIR=common",
-            "SOC_DIR=soc-repo",
+            "SOC_DIR=vendor/qcom/kernel",
             "export DTC_INCLUDE=${ROOT_DIR}/${SOC_DIR}/include",
             "BOOT_IMAGE_HEADER_VERSION=4",
             "BUILD_INIT_BOOT_IMG=1",

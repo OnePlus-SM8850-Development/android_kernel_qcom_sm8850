@@ -9,8 +9,8 @@ MSM_ARCH=autogvm
 VARIANTS=(defconfig debug-defconfig)
 [ -z "${VARIANT}" ] && VARIANT=debug-defconfig
 
-if [ -e "${ROOT_DIR}/soc-repo" ] && [ "${KERNEL_DIR}" = "common" ]; then
-        KERNEL_DIR="soc-repo"
+if [ -e "${ROOT_DIR}/vendor/qcom/kernel" ] && [ "${KERNEL_DIR}" = "common" ]; then
+        KERNEL_DIR="vendor/qcom/kernel"
 fi
 
 BOOT_IMAGE_HEADER_VERSION=2

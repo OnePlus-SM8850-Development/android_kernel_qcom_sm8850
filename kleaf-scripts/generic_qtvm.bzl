@@ -16,12 +16,12 @@ def define_qc_core_header_config(name):
     )
     hermetic_genrule(
         name = "signing_key",
-        srcs = ["//soc-repo:certs/qcom_x509.genkey"],
+        srcs = ["//vendor/qcom/kernel:certs/qcom_x509.genkey"],
         outs = ["signing_key.pem"],
         tools = ["//prebuilts/build-tools:openssl"],
         cmd = """
           $(location //prebuilts/build-tools:openssl) req -new -nodes -utf8 -sha256 -days 36500 \
-            -batch -x509 -config $(location //soc-repo:certs/qcom_x509.genkey) \
+            -batch -x509 -config $(location //vendor/qcom/kernel:certs/qcom_x509.genkey) \
             -outform PEM -out "$@" -keyout "$@"
         """,
         visibility = ["//visibility:public"],
@@ -29,12 +29,12 @@ def define_qc_core_header_config(name):
 
     hermetic_genrule(
         name = "verity_key",
-        srcs = ["//soc-repo:certs/qcom_x509.genkey"],
+        srcs = ["//vendor/qcom/kernel:certs/qcom_x509.genkey"],
         outs = ["verity_cert.pem", "verity_key.pem"],
         tools = ["//prebuilts/build-tools:openssl"],
         cmd = """
           $(location //prebuilts/build-tools:openssl) req -new -nodes -utf8 -newkey rsa:1024 -days 36500 \
-            -batch -x509 -config $(location //soc-repo:certs/qcom_x509.genkey) \
+            -batch -x509 -config $(location //vendor/qcom/kernel:certs/qcom_x509.genkey) \
             -outform PEM -out $(location verity_cert.pem) -keyout $(location verity_key.pem)
         """,
     )

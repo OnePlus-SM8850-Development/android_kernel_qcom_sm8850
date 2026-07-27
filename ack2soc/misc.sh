@@ -37,7 +37,7 @@ function init_errors()
   local error="$1"; shift 1;
   local error_messages=(
     # [0] error 1
-"ERROR: KERNEL PLATFORM, soc-repo (SOC), common (ACK) root folders and SHAs are invalid or not set
+"ERROR: KERNEL PLATFORM, vendor/qcom/kernel (SOC), common (ACK) root folders and SHAs are invalid or not set
        KERNEL_PLATFORM: '%s'
        ACK:             '%s'
        ACK SHA in KP:   '%s'

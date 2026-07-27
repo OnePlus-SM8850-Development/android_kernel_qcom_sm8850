@@ -1,4 +1,4 @@
-load("//build:msm_kernel_extensions.bzl", "define_combined_vm_image", "define_extras", "get_dtb_list")
+load(":kleaf-scripts/msm_kernel_extensions.bzl", "define_combined_vm_image", "define_extras", "get_dtb_list")
 load("//build/bazel_common_rules/dist:dist.bzl", "copy_to_dist_dir")
 load(":kleaf-scripts/image_opts.bzl", "vm_image_opts")
 load(":kleaf-scripts/msm_common.bzl", "get_out_dir")
@@ -17,7 +17,7 @@ def define_seraph_vms(vm_image_opts = vm_image_opts()):
         base_tv = "{}_{}".format(base_target, variant)
 
         dtb_list = get_dtb_list(base_target)
-        compiled_dtbs = ["//soc-repo:seraph-{}_{}_dtb_build/{}".format(vt, variant, t) for vt in vm_types for t in dtb_list]
+        compiled_dtbs = ["//vendor/qcom/kernel:seraph-{}_{}_dtb_build/{}".format(vt, variant, t) for vt in vm_types for t in dtb_list]
 
         if variant == "debug-defconfig":
             base_kernel = "kernel_aarch64_qtvm_debug"

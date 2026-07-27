@@ -99,7 +99,7 @@ ACK_REPO_REL_ROOT="${ACK_REPO_REL_ROOT:-kernel_platform/common}";
 
 SOC_URL="${SOC_URL:-ssh://review-android.quicinc.com:29418/kernel/qcom}";
 SOC_BRANCH="${SOC_BRANCH:-refs/heads/kernel.lnx.0.0}";
-SOC_REPO_REL_ROOT="${SOC_REPO_REL_ROOT:-kernel_platform/soc-repo}";
+SOC_REPO_REL_ROOT="${SOC_REPO_REL_ROOT:-kernel_platform/vendor/qcom/kernel}";
 
 # Existence of this file marks the containing folder as a driver folder
 # TODO: Is this still valid?

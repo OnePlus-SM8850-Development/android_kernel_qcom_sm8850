@@ -43,7 +43,7 @@ def get_out_dir(msm_target, variant):
 def define_signing_keys():
     hermetic_genrule(
         name = "signing_key",
-        srcs = ["//soc-repo:certs/qcom_x509.genkey"],
+        srcs = ["//vendor/qcom/kernel:certs/qcom_x509.genkey"],
         outs = ["signing_key.pem"],
         tools = ["//prebuilts/build-tools:openssl"],
         cmd = """
@@ -55,7 +55,7 @@ def define_signing_keys():
 
     hermetic_genrule(
         name = "verity_key",
-        srcs = ["//soc-repo:certs/qcom_x509.genkey"],
+        srcs = ["//vendor/qcom/kernel:certs/qcom_x509.genkey"],
         outs = ["verity_cert.pem", "verity_key.pem"],
         tools = ["//prebuilts/build-tools:openssl"],
         cmd = """

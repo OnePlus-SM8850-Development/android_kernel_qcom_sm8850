@@ -15,7 +15,7 @@ HOST_TARGETS = ["dtc", "host"]
 DEFAULT_SKIP_LIST = []
 MSM_EXTENSIONS = "build/msm_kernel_extensions.bzl"
 ABL_EXTENSIONS = "build/abl_extensions.bzl"
-DEFAULT_MSM_EXTENSIONS_SRC = "../soc-repo/kleaf-scripts/msm_kernel_extensions.bzl"
+DEFAULT_MSM_EXTENSIONS_SRC = "../vendor/qcom/kernel/kleaf-scripts/msm_kernel_extensions.bzl"
 DEFAULT_ABL_EXTENSIONS_SRC = "../bootable/bootloader/edk2/abl_extensions.bzl"
 DEFAULT_OUT_DIR = "{workspace}/out/msm-kernel-{target}-{variant}"
 GH_VARIANTS =["perf", "consolidate"]
@@ -206,7 +206,7 @@ class BazelBuilder:
 
     def clean_legacy_generated_files(self):
         """Clean generated files from legacy build to avoid conflicts with Bazel"""
-        for f in glob.glob("{}/soc-repo/arch/arm64/configs/vendor/*_defconfig".format(self.workspace)):
+        for f in glob.glob("{}/vendor/qcom/kernel/arch/arm64/configs/vendor/*_defconfig".format(self.workspace)):
             os.remove(f)
 
         f = os.path.join(self.workspace, "bootable", "bootloader", "edk2", "Conf", ".AutoGenIdFile.txt")
@@ -327,7 +327,7 @@ class BazelBuilder:
                 sys.exit(1)
 
         if self.skip_list:
-            self.user_opts.extend(["--//soc-repo:skip_{}=true".format(s) for s in self.skip_list if s != 'abi'])
+            self.user_opts.extend(["--//vendor/qcom/kernel:skip_{}=true".format(s) for s in self.skip_list if s != 'abi'])
 
         self.user_opts.append("--incompatible_sandbox_hermetic_tmp=false")
         self.user_opts.append("--noenable_workspace")
@@ -404,7 +404,7 @@ def main():
         metavar="BUILD_RULE",
         action="append",
         default=[],
-        help="Skip specific build rules (e.g. --skip abl will skip the //soc-repo:<target>_<variant>_abl build)",
+        help="Skip specific build rules (e.g. --skip abl will skip the //vendor/qcom/kernel:<target>_<variant>_abl build)",
     )
     parser.add_argument(
         "-o",

@@ -1,5 +1,5 @@
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("//build:msm_kernel_extensions.bzl", "define_extras", "get_vendor_ramdisk_binaries")
+load(":kleaf-scripts/msm_kernel_extensions.bzl", "define_extras", "get_vendor_ramdisk_binaries")
 load("//build/bazel_common_rules/dist:dist.bzl", "copy_to_dist_dir")
 load("//build/kernel/kleaf:hermetic_tools.bzl", "hermetic_genrule")
 load(
@@ -20,7 +20,7 @@ def define_common_le_rules():
         out = "le.image.config",
         content = [
             "KERNEL_DIR=common",
-            "SOC_DIR=soc-repo",
+            "SOC_DIR=vendor/qcom/kernel",
             "KERNEL_BINARY=Image",
             "DO_NOT_STRIP_MODULES=0",
             "",
@@ -275,13 +275,13 @@ def define_typical_le_build(
         configs = {
             "defconfig": {
                 "config_fragment": config,
-                "base_kernel": "//soc-repo:{}_kernel_aarch64_le".format(name),
+                "base_kernel": "//vendor/qcom/kernel:{}_kernel_aarch64_le".format(name),
                 "build_img_opts": build_img_opts,
                 "ddk_config_deps": [common_info],
             } | perf_kwargs,
             "debug-defconfig": {
                 "config_fragment": debug_config,
-                "base_kernel": "//soc-repo:{}_kernel_aarch64_le_debug".format(name),
+                "base_kernel": "//vendor/qcom/kernel:{}_kernel_aarch64_le_debug".format(name),
                 "build_img_opts": debug_build_img_opts,
                 "ddk_config_deps": [common_info],
                 "implicit_config_fragment": config,
