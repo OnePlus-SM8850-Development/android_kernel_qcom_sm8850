@@ -1,7 +1,9 @@
+. "$(dirname "${BASH_SOURCE[0]}")/soc_repo_path.bzl"
+
 ################################################################################
 ## Inheriting configs from ACK
-. ${ROOT_DIR}/soc-repo/build.config.common
-. ${ROOT_DIR}/soc-repo/build.config.aarch64
+. ${ROOT_DIR}/${SOC_REPO_PATH}/build.config.common
+. ${ROOT_DIR}/${SOC_REPO_PATH}/build.config.aarch64
 
 ################################################################################
 ## Variant setup

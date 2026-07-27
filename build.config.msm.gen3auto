@@ -1,7 +1,9 @@
+. "$(dirname "${BASH_SOURCE[0]}")/soc_repo_path.bzl"
+
 ################################################################################
 ## Inheriting configs from ACK
-. "${ROOT_DIR}/soc-repo/build.config.common"
-. "${ROOT_DIR}/soc-repo/build.config.aarch64"
+. "${ROOT_DIR}/${SOC_REPO_PATH}/build.config.common"
+. "${ROOT_DIR}/${SOC_REPO_PATH}/build.config.aarch64"
 
 ################################################################################
 ## Variant setup
@@ -9,8 +11,8 @@ MSM_ARCH=gen3auto
 VARIANTS=(consolidate perf)
 [ -z "${VARIANT}" ] && VARIANT=perf
 
-if [ -e "${ROOT_DIR}/soc-repo" ] && [ "${KERNEL_DIR}" = "common" ]; then
-	KERNEL_DIR="soc-repo"
+if [ -e "${ROOT_DIR}/${SOC_REPO_PATH}" ] && [ "${KERNEL_DIR}" = "common" ]; then
+	KERNEL_DIR="${SOC_REPO_PATH}"
 fi
 
 ABL_SRC=bootable/bootloader/edk2

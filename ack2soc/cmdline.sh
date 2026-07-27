@@ -196,7 +196,7 @@ $(
         --current-branch                              \\
         --no-tags                                     \\
         --jobs 48                                     \\
-        kernel_platform/{common,soc-repo,build/kernel};
+        kernel_platform/common ${SOC_REPO_REL_ROOT} kernel_platform/build/kernel;
 
       N >= 5, N=0; M >= 0
 
@@ -212,7 +212,7 @@ EXAMPLES:
 
     export SOC_WORKSPACE_ROOT=/path/to/kernel_platform/root;
     $(basename "$0")                                                    \\
-      --soc-root "\${SOC_WORKSPACE_ROOT}/kernel_platform/soc-repo" \\
+      --soc-root "\${SOC_WORKSPACE_ROOT}/${SOC_REPO_REL_ROOT}" \\
       --progress                                                  \\
       --report-all                                                \\
       --ack-sha 544ae1decd                                        \\

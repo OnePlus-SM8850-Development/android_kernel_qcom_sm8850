@@ -3,6 +3,7 @@
 # Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 
 import argparse
+import ast
 import errno
 import glob
 import logging
@@ -15,7 +16,14 @@ HOST_TARGETS = ["dtc", "host"]
 DEFAULT_SKIP_LIST = []
 MSM_EXTENSIONS = "build/msm_kernel_extensions.bzl"
 ABL_EXTENSIONS = "build/abl_extensions.bzl"
-DEFAULT_MSM_EXTENSIONS_SRC = "../soc-repo/kleaf-scripts/msm_kernel_extensions.bzl"
+# Read the shared assignment without executing Starlark as Python.
+SOC_REPO_ROOT = os.path.dirname(os.path.realpath(__file__))
+with open(os.path.join(SOC_REPO_ROOT, "soc_repo_path.bzl")) as path_config:
+    SOC_REPO_PATH = ast.literal_eval(
+        next(line.split("=", 1)[1].strip() for line in path_config
+             if line.startswith("SOC_REPO_PATH="))
+    )
+DEFAULT_MSM_EXTENSIONS_SRC = "../" + SOC_REPO_PATH + "/kleaf-scripts/msm_kernel_extensions.bzl"
 DEFAULT_ABL_EXTENSIONS_SRC = "../bootable/bootloader/edk2/abl_extensions.bzl"
 DEFAULT_OUT_DIR = "{workspace}/out/msm-kernel-{target}-{variant}"
 GH_VARIANTS =["perf", "consolidate"]
@@ -63,16 +71,17 @@ class BazelBuilder:
     """Helper class for building with Bazel"""
 
     def __init__(self, target_list, skip_list, out_dir, cache_dir, dry_run, target_build_variant, user_opts):
-        self.workspace = os.path.realpath(
-            os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
-        )
+        self.process_list = []
+        self.workspace = SOC_REPO_ROOT
+        for _ in SOC_REPO_PATH.split("/"):
+            self.workspace = os.path.dirname(self.workspace)
+        if os.path.realpath(os.path.join(self.workspace, SOC_REPO_PATH)) != SOC_REPO_ROOT:
+            raise ValueError("Repository location does not match soc_repo_path.bzl")
         self.bazel_bin = os.path.join(self.workspace, "tools", "bazel")
         if not os.path.exists(self.bazel_bin):
             logging.error("failed to find Bazel binary at %s", self.bazel_bin)
             sys.exit(1)
-        self.kernel_dir = os.path.basename(
-            (os.path.dirname(os.path.realpath(__file__)))
-        )
+        self.kernel_dir = SOC_REPO_PATH
 
         for t, v in target_list:
             if not t or not v:
@@ -206,7 +215,7 @@ class BazelBuilder:
 
     def clean_legacy_generated_files(self):
         """Clean generated files from legacy build to avoid conflicts with Bazel"""
-        for f in glob.glob("{}/soc-repo/arch/arm64/configs/vendor/*_defconfig".format(self.workspace)):
+        for f in glob.glob(os.path.join(self.workspace, self.kernel_dir, "arch/arm64/configs/vendor/*_defconfig")):
             os.remove(f)
 
         f = os.path.join(self.workspace, "bootable", "bootloader", "edk2", "Conf", ".AutoGenIdFile.txt")
@@ -327,7 +336,7 @@ class BazelBuilder:
                 sys.exit(1)
 
         if self.skip_list:
-            self.user_opts.extend(["--//soc-repo:skip_{}=true".format(s) for s in self.skip_list if s != 'abi'])
+            self.user_opts.extend(["--//{}:skip_{}=true".format(self.kernel_dir, s) for s in self.skip_list if s != 'abi'])
 
         self.user_opts.append("--incompatible_sandbox_hermetic_tmp=false")
         self.user_opts.append("--noenable_workspace")
@@ -404,7 +413,7 @@ def main():
         metavar="BUILD_RULE",
         action="append",
         default=[],
-        help="Skip specific build rules (e.g. --skip abl will skip the //soc-repo:<target>_<variant>_abl build)",
+        help="Skip specific build rules (e.g. --skip abl will skip the SoC <target>_<variant>_abl build)",
     )
     parser.add_argument(
         "-o",
