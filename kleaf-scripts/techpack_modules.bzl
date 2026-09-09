@@ -1,5 +1,6 @@
 load("@rules_pkg//pkg:install.bzl", "pkg_install")
 load("@rules_pkg//pkg:mappings.bzl", "pkg_files", "strip_prefix")
+load("//vendor/qcom/sm8850-modules/oplus/bazel:oplus_modules.bzl", "define_oplus_ddk_modules")
 
 def define_techpack_modules(target, msm_target, variant):
     techpack_targets = [
@@ -80,5 +81,10 @@ def define_techpack_modules(target, msm_target, variant):
         srcs = [":{}_all_vendor_module_dist_files".format(target)],
         destdir = "out/msm-kernel-{}/techpack",  # Equivalent to dist_dir
     )
+
+    if msm_target == "canoe" and variant == "perf":
+        techpack_targets.extend(
+            define_oplus_ddk_modules(target, msm_target, variant),
+        )
 
     return techpack_targets
