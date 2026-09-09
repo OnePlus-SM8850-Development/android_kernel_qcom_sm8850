@@ -71,7 +71,11 @@ static struct dma_buf *movable_heap_allocate(struct dma_heap *heap,
 	if (!buffer)
 		return ERR_PTR(-ENOMEM);
 
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_AIZEROCOPY)
+	ret = system_qcom_sg_buffer_alloc(sys_heap, buffer, len, true, NULL);
+#else
 	ret = system_qcom_sg_buffer_alloc(sys_heap, buffer, len, true);
+#endif
 	if (ret)
 		goto free_buffer;
 

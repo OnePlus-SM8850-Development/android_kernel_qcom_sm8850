@@ -450,14 +450,18 @@ struct page *qcom_sys_heap_alloc_largest_available(struct dynamic_page_pool **po
 			page = dynamic_page_pool_remove(pools[i], false);
 		spin_unlock_irqrestore(&pools[i]->lock, flags);
 
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE)
 		memalloc_boost_save();
+#endif
 		if (!page && movable)
 			page = qcom_movable_heap_alloc_pages(pools[i]);
 		if (!page)
 			page = alloc_pages(pools[i]->gfp_mask, pools[i]->order);
 		if (!page && alloc_reclaim && i == 1)
 			page = alloc_pages(LOW_ORDER_GFP | __GFP_RETRY_MAYFAIL, pools[i]->order);
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE)
 		memalloc_boost_restore();
+#endif
 		if (!page)
 			continue;
 
