@@ -9,6 +9,6 @@ def register_modules(registry):
         ],
         deps = [
             # do not sort
-            "drivers/power/supply/qti_battery_charger",
+            "//vendor/qcom/sm8850-modules/oplus/kernel/charger/bazel:{target_variant}_oplus_chg_v2",
         ],
     )

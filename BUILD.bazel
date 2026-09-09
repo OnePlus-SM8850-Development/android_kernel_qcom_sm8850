@@ -181,6 +181,17 @@ ddk_headers(
     visibility = ["//visibility:public"],
 )
 
+# Private pinctrl definitions used by the Oplus charger test kit.
+ddk_headers(
+    name = "oplus_charger_pinctrl_headers",
+    hdrs = [
+        ":all_headers",
+        "drivers/pinctrl/qcom/pinctrl-msm.h",
+    ],
+    includes = ["drivers/pinctrl/qcom"],
+    visibility = ["//visibility:public"],
+)
+
 ddk_uapi_headers(
     name = "msm_uapi_headers",
     srcs = glob(["include/uapi/**/*.h"]),

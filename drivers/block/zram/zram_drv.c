@@ -1717,7 +1717,7 @@ static int zram_write_finish(struct qpace_request_meta *zmeta,
 		zram_set_obj_size(zram, index, comp_len);
 #ifdef CONFIG_HYBRIDSWAP_CORE
 		/* zram write page by hardware, no need to track same page */
-		hybridswap_track(zmeta->zram, zdata->bdev_page_index, folio_memcg(page_folio(zdata->page)));
+                hybridswap_track(zram, index, folio_memcg(page_folio(zmeta->page)));
 #endif
 	}
 

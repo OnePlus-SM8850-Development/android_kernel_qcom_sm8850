@@ -143,7 +143,6 @@ qcom_dynamic_ramoops.ko
 oplus_bsp_dfr_qcom_enhance_watchdog.ko
 deferred-free-helper.ko
 oplus_bsp_frame_boost.ko
-oplus_bsp_geas_system.ko
 oplus_bsp_mm_osvelte.ko
 cpufreq_bouncing.ko
 oplus_bsp_task_overload.ko
