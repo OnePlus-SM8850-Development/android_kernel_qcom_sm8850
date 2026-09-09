@@ -9,5 +9,6 @@ build --//build/kernel/kleaf:socrepo=true
 build --flag_alias=qtisocrepo=//build/qcom_build_extensions:qtisocrepo
 build --//build/qcom_build_extensions:qtisocrepo=true
 common --//build/kernel/kleaf:user_ddk_unsafe_headers=//vendor/qcom/kernel:unsafe_headers_qcom_group
+common --deleted_packages=vendor/qcom/kernel/arch/arm64/boot/dts/vendor/qcom/wlan
 # Allocate default 80% heap for bazel
 startup --host_jvm_args=-XX:MaxRAMPercentage=80.0
