@@ -1,2 +1,84 @@
+load("@rules_pkg//pkg:install.bzl", "pkg_install")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_files", "strip_prefix")
+
 def define_techpack_modules(target, msm_target, variant):
-    return
+    techpack_targets = [
+        "//vendor/qcom/sm8850-modules/qcom/opensource/fingerprint:{}_qbt_handler".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/bt-kernel:{}_btpower".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/bt-kernel:{}_radio-i2c-rtc6226-qca".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/bt-kernel:{}_btfm_slim_codec".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/bt-kernel:{}_btfmcodec".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/bt-kernel:{}_bt_fm_swr".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/bt-kernel:{}_spi_cnss_proto".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/dsp-kernel:{}_frpc-adsprpc".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/eva-kernel:{}_eva_modules".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/securemsm-kernel:{}_smcinvoke_dlkm".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/securemsm-kernel:{}_qcrypto-msm_dlkm".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/securemsm-kernel:{}_tz_log_dlkm".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/securemsm-kernel:{}_qseecom_dlkm".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/securemsm-kernel:{}_hdcp_qseecom_dlkm".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/securemsm-kernel:{}_qce50_dlkm".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/securemsm-kernel:{}_qcedev-mod_dlkm".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/securemsm-kernel:{}_qrng_dlkm".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/securemsm-kernel:{}_smmu_proxy_dlkm".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/securemsm-kernel:{}_tmecom-intf_dlkm".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/securemsm-kernel:{}_seccam_test_driver".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/securemsm-kernel:{}_hdcp2p2_test".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/securemsm-kernel:{}_si_core_test".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/securemsm-kernel:{}_tornado_mod".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/spu-kernel:{}_spcom".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/spu-kernel:{}_spss_utils".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/synx-kernel:{}_modules".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/touch-drivers:{}_touch_modules".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/datarmnet:{}_rmnet_ctl".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/datarmnet:{}_rmnet_core".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/datarmnet-ext/aps:{}_aps".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/datarmnet-ext/offload:{}_offload".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/datarmnet-ext/perf:{}_perf".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/datarmnet-ext/perf_tether:{}_perf_tether".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/datarmnet-ext/mem:{}_rmnet_mem".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/datarmnet-ext/sch:{}_sch".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/datarmnet-ext/shs:{}_shs".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/datarmnet-ext/wlan:{}_wlan".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/mm-drivers/sync_fence:{}_sync_fence".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/mm-drivers/hw_fence:{}_msm_hw_fence".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/mm-drivers/hfi_core:{}_msm_hfi_core".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/mm-drivers/msm_ext_display:{}_msm_ext_display".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/mmrm-driver:{}_mmrm_driver".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/audio-kernel:{}_modules".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/dataipa:{}_gsim".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/dataipa:{}_ipam".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/dataipa:{}_ipanetm".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/data-kernel/drivers/smem-mailbox:{}_smem_mailbox".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/graphics-kernel:{}_msm_kgsl".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/video-driver:{}_video_modules".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/display-drivers:{}_msm_drm".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/wlan/qcacld-3.0:{}_qca_cld_peach-v2".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/wlan/qcacld-3.0:{}_qca_cld_kiwi-v2".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/wlan/qcacld-3.0:{}_qca_cld_wcn7750".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/wlan/platform:{}_cnss2".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/wlan/platform:{}_cnss_plat_ipc_qmi_svc".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/wlan/platform:{}_icnss2".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/wlan/platform:{}_cnss_nl".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/wlan/platform:{}_cnss_prealloc".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/wlan/platform:{}_cnss_utils".format(target),
+        "//vendor/qcom/sm8850-modules/qcom/opensource/wlan/platform:{}_wlan_firmware_service".format(target),
+        "//vendor/qcom/sm8850-modules/nxp/opensource/driver:{}_stm_nfc_i2c".format(target),
+    ]
+
+      # 1. Define how files are packaged (permissions + flattening)
+    pkg_files(
+        name = "{}_all_vendor_module_dist_files".format(target),
+        srcs = techpack_targets,
+        strip_prefix = strip_prefix.files_only(),  # Equivalent to flat = True
+        visibility = ["//visibility:private"],
+    )
+
+    # 2. Define the installation to the distribution directory
+    pkg_install(
+        name = "{}_all_vendor_module_dist".format(target),
+        srcs = [":{}_all_vendor_module_dist_files".format(target)],
+        destdir = "out/msm-kernel-{}/techpack",  # Equivalent to dist_dir
+    )
+
+    return techpack_targets

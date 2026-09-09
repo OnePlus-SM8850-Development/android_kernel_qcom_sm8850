@@ -340,6 +340,8 @@ def define_single_android_build(
         if board_bc_extras:
             dist_data.append("{}_extra_bootconfig".format(stem))
 
+    dist_data.extend(define_techpack_modules(stem, name, variant))
+
     copy_to_dist_dir(
         name = "{}_dist".format(stem),
         data = dist_data,
@@ -361,8 +363,6 @@ def define_single_android_build(
     define_abl_dist(stem, name, variant)
 
     define_dtc_dist(stem, name, variant)
-
-    define_techpack_modules(stem, name, variant)
 
     define_extras(stem, kbuild_config = base_kernel)
 
