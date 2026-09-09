@@ -32,8 +32,15 @@
 #include <linux/qcom_dma_heap.h>
 #include <linux/msm_dma_iommu_mapping.h>
 #include <linux/qti-smmu-proxy-callbacks.h>
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_AIZEROCOPY)
+#include "aizerofs/aizerofs_shrink.h"
+#include "../../../drivers/soc/qcom/mem_buf/mem-buf-dev.h"
+#endif
 
 #include "qcom_sg_ops.h"
+#include "qcom_dma_trace.h"
+#include "../../../drivers/soc/qcom/mem_buf/mem-buf-dev.h"
+
 
 int proxy_invalid_map(struct device *dev, struct sg_table *table,
 		      struct dma_buf *dmabuf)
@@ -565,6 +572,9 @@ void qcom_sg_buffer_init(struct qcom_sg_buffer *buffer)
 {
 	INIT_LIST_HEAD(&buffer->attachments);
 	mutex_init(&buffer->lock);
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_AIZEROCOPY)
+	buffer->release_via_cache = false;
+#endif
 }
 EXPORT_SYMBOL_GPL(qcom_sg_buffer_init);
 
@@ -572,7 +582,36 @@ EXPORT_SYMBOL_GPL(qcom_sg_buffer_init);
 void qcom_sg_release(void *buffer)
 {
 	struct qcom_sg_buffer *buf = (struct qcom_sg_buffer *)buffer;
+
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_AIZEROCOPY)
+	if (buf->release_via_cache) {
+		dmabuf_caches_destroy_all();
+		sg_free_table(&buf->sg_table);
+		mem_buf_vmperm_free(buf->vmperm);
+#if IS_ENABLED(CONFIG_QCOM_DMABUF_HEAPS_SYSTEM) && IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE)
+		if (is_system_heap_deferred_free(buf->free)) {
+			if (atomic64_sub_return(buf->len, &qcom_system_heap_total) < 0) {
+				pr_info("warn: %s, total memory underflow, 0x%lld!!, reset as 0\n",
+					__func__, atomic64_read(&qcom_system_heap_total));
+				atomic64_set(&qcom_system_heap_total, 0);
+			}
+		}
+#endif /* CONFIG_QCOM_DMABUF_HEAPS_SYSTEM */
+		kfree(buf);
+		return;
+	}
+#endif
 	mem_buf_vmperm_free(buf->vmperm);
+
+#if IS_ENABLED(CONFIG_QCOM_DMABUF_HEAPS_SYSTEM) && IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_OSVELTE)
+	if (is_system_heap_deferred_free(buf->free)) {
+		if (atomic64_sub_return(buf->len, &qcom_system_heap_total) < 0) {
+			pr_info("warn: %s, total memory underflow, 0x%lld!!, reset as 0\n",
+				__func__, atomic64_read(&qcom_system_heap_total));
+			atomic64_set(&qcom_system_heap_total, 0);
+		}
+	}
+#endif /* CONFIG_QCOM_DMABUF_HEAPS_SYSTEM */
 	if (buf->free)
 		buf->free(buf);
 }
@@ -611,6 +650,12 @@ void qcom_sg_dmabuf_release(struct dma_buf *dmabuf)
 {
 	struct qcom_sg_buffer *buffer = dmabuf->priv;
 
+	trace_qcom_dma_free(buffer->len, dmabuf->__kabi_reserved2,
+			    dmabuf->exp_name ? : "NULL");
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_AIZEROCOPY)
+	if (handle_dbuf_cache_release(dmabuf))
+		buffer->release_via_cache = true;
+#endif
 	qcom_sg_exit(buffer);
 }
 EXPORT_SYMBOL_GPL(qcom_sg_dmabuf_release);
@@ -652,4 +697,3 @@ int qti_smmu_proxy_register_callbacks(smmu_proxy_map_sgtable map_sgtable_fn_ptr,
 	return 0;
 }
 EXPORT_SYMBOL(qti_smmu_proxy_register_callbacks);
-

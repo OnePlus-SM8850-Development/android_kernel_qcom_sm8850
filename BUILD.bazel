@@ -182,6 +182,17 @@ ddk_headers(
     visibility = ["//visibility:public"],
 )
 
+# Private pinctrl definitions used by the Oplus charger test kit.
+ddk_headers(
+    name = "oplus_charger_pinctrl_headers",
+    hdrs = [
+        ":all_headers",
+        "drivers/pinctrl/qcom/pinctrl-msm.h",
+    ],
+    includes = ["drivers/pinctrl/qcom"],
+    visibility = ["//visibility:public"],
+)
+
 ddk_uapi_headers(
     name = "msm_uapi_headers",
     srcs = glob(["include/uapi/**/*.h"]),
@@ -216,6 +227,8 @@ filegroup(
         "//common:arch/arm64/kvm/hyp/include/nvhe/refcount.h",
         "//common:arch/arm64/kvm/hyp/include/nvhe/serial.h",
         "//common:drivers/android/binder_alloc.h",
+	"//common:kernel/irq/internals.h",
+	"//common:kernel/irq/settings.h",
         "//common:drivers/android/binder_internal.h",
         "//common:drivers/android/binder_trace.h",
         "//common:drivers/android/dbitmap.h",
@@ -273,6 +286,7 @@ filegroup(
         "//common:drivers/usb/typec/ucsi/ucsi.h",
         "//common:drivers/virt/gunyah/rsc_mgr.h",
         "//common:fs/proc/internal.h",
+        "//common:kernel/futex/futex.h",
         "//common:kernel/locking/mutex.h",
         "//common:kernel/power/power.h",
         "//common:kernel/printk/printk_ringbuffer.h",

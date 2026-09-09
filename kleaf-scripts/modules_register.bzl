@@ -1,3 +1,4 @@
+load("//vendor/qcom/sm8850-modules/oplus/bazel:oplus_modules.bzl", "get_oplus_ddk_modules")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "//build/kernel/kleaf:kernel.bzl",
@@ -70,9 +71,12 @@ def _generate_ddk_target(
     ddk_config(
         name = "{}_config".format(target_variant),
         defconfig = ":{}_defconfig".format(target_variant),
-        kconfigs = [":kconfig.msm.generated"],
+        kconfigs = [
+            ":kconfig.msm.generated",
+            "//vendor/qcom/sm8850-modules/oplus/kernel/charger/bazel:kconfig.oplus_chg.generated"],
         kernel_build = ":{}_base_kernel".format(target_variant),
         deps = ddk_config_deps,
+        visibility = ["//visibility:public"],
     )
 
     if config_path:
@@ -120,6 +124,11 @@ def _generate_ddk_target(
 
         deps = module_deps + library_deps
         deps += [":{}_{}".format(target_variant, dep) for dep in module.hook_deps]
+
+        # Preserve external Oplus module dependencies.
+        for dep in module.deps:
+            if dep.startswith("//vendor/qcom/sm8850-modules/oplus"):
+                deps.append(dep.replace("{target_variant}", target_variant))
         src_hdrs = [src for src in module.srcs if src.endswith(".h")]
         includes = (module.includes or []) + {paths.dirname(hdr): "" for hdr in src_hdrs}.keys()
 
@@ -148,7 +157,11 @@ def _generate_ddk_target(
         )
     kernel_module_group(
         name = "{}_all_modules".format(target_variant),
-        srcs = module_names.values(),
+        srcs = module_names.values() + (
+            get_oplus_ddk_modules(target_variant, "canoe", "perf")
+            if target_variant == "canoe_perf"
+            else []
+        ),
         visibility = ["//visibility:public"],
     )
 

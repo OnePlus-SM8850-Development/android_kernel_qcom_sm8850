@@ -109,24 +109,53 @@ int qrtr_get_service_id(unsigned int node_id, unsigned int port_id)
 	struct qrtr_node *node;
 	unsigned long index;
 	unsigned int svc_id;
+	unsigned long flags;
 
 	node = xa_load(&nodes, node_id);
 	if (!node)
 		return -EINVAL;
 
-	xa_lock(&node->servers);
+	xa_lock_irqsave(&node->servers, flags);
 	xa_for_each(&node->servers, index, srv) {
 		if (srv->node == node_id && srv->port == port_id) {
 			svc_id = srv->service;
-			xa_unlock(&node->servers);
+			xa_unlock_irqrestore(&node->servers, flags);
 			return svc_id;
 		}
 	}
-	xa_unlock(&node->servers);
+	xa_unlock_irqrestore(&node->servers, flags);
 
 	return -EINVAL;
 }
 EXPORT_SYMBOL_GPL(qrtr_get_service_id);
+
+#ifdef CONFIG_OPLUS_POWERINFO_STANDBY_DEBUG
+int qrtr_get_service_instance_id(unsigned int node_id, unsigned int port_id)
+{
+	struct qrtr_server *srv;
+	struct qrtr_node *node;
+	unsigned long index;
+	unsigned int instance_id;
+	unsigned long flags;
+
+	node = xa_load(&nodes, node_id);
+	if (!node)
+		return -EINVAL;
+
+	xa_lock_irqsave(&node->servers, flags);
+	xa_for_each(&node->servers, index, srv) {
+		if (srv->node == node_id && srv->port == port_id) {
+			instance_id = srv->instance;
+			xa_unlock_irqrestore(&node->servers, flags);
+			return instance_id;
+		}
+	}
+	xa_unlock_irqrestore(&node->servers, flags);
+
+	return -EINVAL;
+}
+EXPORT_SYMBOL(qrtr_get_service_instance_id);
+#endif
 
 static int server_match(const struct qrtr_server *srv,
 			const struct qrtr_server_filter *f)
@@ -790,6 +819,9 @@ int qrtr_ns_init(void)
 		       PTR_ERR(qrtr_ns.task));
 		goto err_sock;
 	}
+
+	/* Camera Team, BugID: 9846848, Set the task priority to FIFO low */
+	sched_set_fifo_low(qrtr_ns.task);
 
 	qrtr_ns.sock->sk->sk_data_ready = qrtr_ns_data_ready;
 
