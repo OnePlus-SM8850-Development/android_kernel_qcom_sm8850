@@ -327,6 +327,16 @@ label_flag(
     ],
 )
 
+label_flag(
+    name = "msm_kernel_build_modules",
+    build_setting_default = "//common:kernel_aarch64_modules",
+    visibility = [
+        "//private/devices/google/aarch64/qcom:__subpackages__",
+        "//private/google-modules/qcom:__subpackages__",
+        "//vendor/qcom/kernel:__subpackages__",
+    ],
+)
+
 define_canoe()
 
 define_alor_le()

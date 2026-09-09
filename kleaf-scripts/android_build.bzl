@@ -102,6 +102,29 @@ def define_single_android_build(
         """.format(mod_list = " ".join(modules)),
     )
 
+    hermetic_genrule(
+        name = "{}_system_dlkm_modules_load_filtered".format(stem),
+        srcs = [
+            "{}_images".format(base_kernel),
+            ":{}_vendor_dlkm_modules_list_generated".format(stem),
+        ],
+        outs = ["{}/system_dlkm.modules.load".format(stem)],
+        cmd = """
+          for file in $(SRCS); do
+            case "$$file" in
+              */system_dlkm.modules.load)
+                while IFS= read -r module; do
+                  module_name="$${{module##*/}}"
+                  if ! grep -qxF "$$module_name" "$(location :{stem}_vendor_dlkm_modules_list_generated)"; then
+                    echo "$$module"
+                  fi
+                done < "$$file"
+                ;;
+            esac
+          done > "$@"
+        """.format(stem = stem),
+    )
+
     if dtb_target:
         dtb_list, dtbo_list, custom_dtbo_img_list = define_qcom_dtbs(
             stem = stem,
@@ -275,10 +298,12 @@ def define_single_android_build(
 
     dist_data = [
         "{}_gki_artifacts".format(base_kernel),
+        "{}_modules".format(base_kernel),
         ":{}_modules_install".format(stem),
         "{}_dtb_build".format(stem),
         ":{}_images".format(stem),
         "{}_images".format(base_kernel),
+        ":{}_system_dlkm_modules_load_filtered".format(stem),
         "{}_super_image".format(stem),
         "{}_unsparsed_image".format(stem),
         "{}_avb_sign_boot_image".format(stem),
