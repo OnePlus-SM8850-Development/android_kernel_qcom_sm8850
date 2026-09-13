@@ -21,6 +21,7 @@ load(":kleaf-scripts/dtbs.bzl", "define_qcom_dtbs")
 load(":kleaf-scripts/modules_unprotected.bzl", "get_unprotected_vendor_modules_list")
 load(":kleaf-scripts/msm_dtc.bzl", "define_dtc_dist")
 load(":kleaf-scripts/techpack_modules.bzl", "define_techpack_modules")
+load(":kleaf-scripts/techpack_uapi_headers.bzl", "define_techpack_uapi_headers")
 load(":qcom_libraries.bzl", "library_registry")
 load(":qcom_modules.bzl", "registry")
 
@@ -247,13 +248,18 @@ def define_single_android_build(
         out = "super_unsparsed.img",
     )
 
+    techpack_uapi_headers = define_techpack_uapi_headers(
+        stem = stem,
+        kernel_build = base_kernel,
+    )
+
     hermetic_genrule(
         name = "{}_merge_msm_uapi_headers".format(stem),
         srcs = [
             # do not sort
             ":{}_merged_kernel_uapi_headers".format(stem),
             "msm_uapi_headers",
-        ],
+        ] + techpack_uapi_headers,
         outs = ["{}_kernel-uapi-headers.tar.gz".format(stem)],
         cmd = """
             mkdir -p intermediate_dir
@@ -264,6 +270,20 @@ def define_single_android_build(
             tar czf $(OUTS) -C intermediate_dir usr/
             rm -rf intermediate_dir
         """,
+    )
+
+    # Header consumers expect this basename from the standalone dist target.
+    copy_file(
+        name = "{}_uapi_headers".format(stem),
+        src = ":{}_merge_msm_uapi_headers".format(stem),
+        out = "{}/uapi_headers/kernel-uapi-headers.tar.gz".format(stem),
+    )
+
+    copy_to_dist_dir(
+        name = "{}_uapi_headers_dist".format(stem),
+        data = [":{}_uapi_headers".format(stem)],
+        dist_dir = "out/msm-kernel-{}-{}/dist".format(name, variant),
+        flat = True,
     )
 
     merged_kernel_uapi_headers(
