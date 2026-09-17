@@ -66,9 +66,10 @@ def define_techpack_modules(target, msm_target, variant):
         "//" + SOC_MODULES_REPO_PATH + "/qcom/opensource/wlan/platform:{}_cnss_utils".format(target),
         "//" + SOC_MODULES_REPO_PATH + "/qcom/opensource/wlan/platform:{}_wlan_firmware_service".format(target),
         "//" + SOC_MODULES_REPO_PATH + "/nxp/opensource/driver:{}_nxp-nci".format(target),
+        "//" + SOC_MODULES_REPO_PATH + "/oplus/bazel:{}_oplus_modules".format(target),
     ]
 
-      # 1. Define how files are packaged (permissions + flattening)
+    # 1. Define how files are packaged (permissions + flattening)
     pkg_files(
         name = "{}_all_vendor_module_dist_files".format(target),
         srcs = techpack_targets,
@@ -80,7 +81,7 @@ def define_techpack_modules(target, msm_target, variant):
     pkg_install(
         name = "{}_all_vendor_module_dist".format(target),
         srcs = [":{}_all_vendor_module_dist_files".format(target)],
-        destdir = "out/msm-kernel-{}/techpack",  # Equivalent to dist_dir
+        destdir = "out/msm-kernel-{}/techpack".format(target),  # Equivalent to dist_dir
     )
 
     return techpack_targets
