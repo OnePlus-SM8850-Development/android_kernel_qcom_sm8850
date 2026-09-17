@@ -1,6 +1,8 @@
 load(":soc_repo_path.bzl", "SOC_REPO_PATH")
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
-load("//vendor/qcom/kernel/arch/arm64/boot/dts/vendor:qcom/platform_map.bzl", _get_custom_dtbo_img_list = "get_custom_dtbo_img_list", _get_dtb_list = "get_dtb_list", _get_dtbo_list = "get_dtbo_list")
+#load("//vendor/qcom/kernel/arch/arm64/boot/dts/vendor:qcom/platform_map.bzl", _get_custom_dtbo_img_list = "get_custom_dtbo_img_list", _get_dtb_list = "get_dtb_list", _get_dtbo_list = "get_dtbo_list")
+#oplus devicetree overylay use oplus dir
+load("//vendor/qcom/kernel/arch/arm64/boot/dts/vendor:oplus/platform_map.bzl", _get_custom_dtbo_img_list = "get_custom_dtbo_img_list", _get_dtb_list = "get_dtb_list", _get_dtbo_list = "get_dtbo_list")
 
 def define_top_level_rules():
     for skippable in ["abl", "dtc", "abi"]:

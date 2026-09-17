@@ -1,3 +1,4 @@
+load(":soc_repo_path.bzl", "SOC_MODULES_REPO_PATH")
 def register_modules(registry):
     registry.register(
         name = "drivers/ufs/host/ufshcd-crypto-qti",
@@ -54,6 +55,7 @@ def register_modules(registry):
             "drivers/virt/gunyah/gh_msgq",
             "drivers/virt/gunyah/gh_dbl",
             "arch/arm64/gunyah/gh_arm_drv",
+            "//" + SOC_MODULES_REPO_PATH + "/oplus/kernel/storage:ufs-oplus-dbg"
         ],
     )
 
