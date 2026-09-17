@@ -78,7 +78,7 @@ def define_qcom_dtbs(
         dtstree = get_dtstree(target),
         outs = dtb_list + dtbo_list + ["vmlinux", "Module.symvers", "Image", "System.map", ".config"],
         base_kernel = ":{}_base_kernel".format(stem),
-        kconfig_ext = ":kconfig.msm.generated",
+        kconfig_ext = ":kconfig.dtb.generated",
         makefile = "//common:Makefile",
         defconfig = defconfig,
         post_defconfig_fragments = [
