@@ -114,6 +114,7 @@ def _generate_ddk_target(
             else:
                 phony_configurations.append(obj)
 
+    oplus_install_deps = {}
     for module in matched_configurations:
         module_deps = [":{}".format(module_names.get(dep)) for dep in module.deps if module_names.get(dep)]
         library_deps = []
@@ -127,7 +128,9 @@ def _generate_ddk_target(
         # add oplus module deps
         for dep in module.deps:
             if dep.startswith("//" + SOC_MODULES_REPO_PATH + "/oplus"):
-                deps.append(dep.replace("{target_variant}", "{}".format(target_variant)))
+                resolved_dep = dep.replace("{target_variant}", target_variant)
+                deps.append(resolved_dep)
+                oplus_install_deps[resolved_dep] = True
 
         src_hdrs = [src for src in module.srcs if src.endswith(".h")]
         includes = (module.includes or []) + {paths.dirname(hdr): "" for hdr in src_hdrs}.keys()
@@ -163,7 +166,8 @@ def _generate_ddk_target(
 
     kernel_modules_install(
         name = "{}_modules_install".format(target_variant),
-        kernel_modules = [":{}_all_modules".format(target_variant)],
+        # DDK build dependencies are not automatically installed.
+        kernel_modules = [":{}_all_modules".format(target_variant)] + oplus_install_deps.keys(),
         outs = ["modules.dep"],
     )
 
