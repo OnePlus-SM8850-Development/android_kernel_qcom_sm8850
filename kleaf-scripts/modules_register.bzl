@@ -1,3 +1,4 @@
+load(":soc_repo_path.bzl", "SOC_MODULES_REPO_PATH")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "//build/kernel/kleaf:kernel.bzl",
@@ -70,9 +71,12 @@ def _generate_ddk_target(
     ddk_config(
         name = "{}_config".format(target_variant),
         defconfig = ":{}_defconfig".format(target_variant),
-        kconfigs = [":kconfig.msm.generated"],
+        kconfigs = [
+            ":kconfig.msm.generated",
+            "//" + SOC_MODULES_REPO_PATH + "/oplus/kernel/charger/bazel:kconfig.oplus_chg.generated"],
         kernel_build = ":{}_base_kernel".format(target_variant),
         deps = ddk_config_deps,
+        visibility = ["//visibility:public"],
     )
 
     if config_path:
@@ -120,6 +124,13 @@ def _generate_ddk_target(
 
         deps = module_deps + library_deps
         deps += [":{}_{}".format(target_variant, dep) for dep in module.hook_deps]
+        # add oplus module deps
+        deps += [
+            dep.replace("{target_variant}", target_variant)
+            for dep in module.deps
+            if dep.startswith("//")
+        ]
+
         src_hdrs = [src for src in module.srcs if src.endswith(".h")]
         includes = (module.includes or []) + {paths.dirname(hdr): "" for hdr in src_hdrs}.keys()
 

@@ -129,6 +129,9 @@ qcom_tzmem.ko
 icc-clk.ko
 cqhci.ko
 sdhci-msm.ko
+ufs-oplus-dbg.ko
+device_info.ko
+qpnp-power-on.ko
 arm_smmu_pmu.ko
 deferred-free-helper.ko
 i2c-msm-geni.ko

@@ -25,4 +25,7 @@ canoe_consolidate_config = {
     "CONFIG_TORTURE_TEST": "m",
     "CONFIG_UFS_DBG": "y",
     "CONFIG_USB_LINK_LAYER_TEST": "m",
+# if OPLUS_FEATURE_CHG_BASIC
+    "CONFIG_OPLUS_FEATURE_CHG_IC_VIRTUAL": "y",
+# OPLUS_FEATURE_CHG_BASIC end
 }

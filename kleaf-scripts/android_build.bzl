@@ -22,6 +22,7 @@ load(":kleaf-scripts/modules_unprotected.bzl", "get_unprotected_vendor_modules_l
 load(":kleaf-scripts/msm_dtc.bzl", "define_dtc_dist")
 load(":kleaf-scripts/techpack_modules.bzl", "define_techpack_modules")
 load(":kleaf-scripts/techpack_uapi_headers.bzl", "define_techpack_uapi_headers")
+load("//vendor/qcom/sm8850-modules/oplus/bazel:oplus_modules.bzl", "define_oplus_ddk_modules")
 load(":qcom_libraries.bzl", "library_registry")
 load(":qcom_modules.bzl", "registry")
 
@@ -365,6 +366,7 @@ def define_single_android_build(
             dist_data.append("{}_extra_bootconfig".format(stem))
 
     dist_data.extend(define_techpack_modules(stem, name, variant))
+    dist_data.extend(define_oplus_ddk_modules(stem, name, variant))
 
     copy_to_dist_dir(
         name = "{}_dist".format(stem),

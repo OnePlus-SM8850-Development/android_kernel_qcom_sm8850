@@ -1,3 +1,4 @@
+load(":soc_repo_path.bzl", "SOC_MODULES_REPO_PATH")
 def register_modules(registry):
     registry.register(
         name = "drivers/remoteproc/qcom_pil_info",
@@ -40,7 +41,14 @@ def register_modules(registry):
             "drivers/virt/gunyah/gh_msgq",
             "drivers/virt/gunyah/gh_dbl",
             "arch/arm64/gunyah/gh_arm_drv",
+            # Add for oplus mm feedback, CONFIG_OPLUS_FEATURE_MM_FEEDBACK
+            "//" + SOC_MODULES_REPO_PATH + "/oplus/kernel/multimedia/feedback/bazel:oplus_mm_kevent_fb",
+            # Add for oplus mdmrst, OPLUS_FEATURE_RECORD_MDMRST
+            "//" + SOC_MODULES_REPO_PATH + "/oplus/hardware/radio/mdmrst/bazel:oplus_mdmrst",
         ],
+        # Add for oplus config
+        copts = ["-DCONFIG_OPLUS_FEATURE_MM_FEEDBACK",
+                 "-DOPLUS_FEATURE_RECORD_MDMRST"],
     )
 
     registry.register(

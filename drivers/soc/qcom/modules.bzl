@@ -1,3 +1,4 @@
+load(":soc_repo_path.bzl", "SOC_MODULES_REPO_PATH")
 load(":drivers/soc/qcom/dcvs/modules.bzl", register_dcvs = "register_modules")
 load(":drivers/soc/qcom/hab/modules.bzl", register_hab = "register_modules")
 load(":drivers/soc/qcom/mem_buf/modules.bzl", register_mem_buf = "register_modules")
@@ -166,7 +167,9 @@ def register_modules(registry):
             "drivers/virt/gunyah/gh_msgq",
             "drivers/virt/gunyah/gh_dbl",
             "arch/arm64/gunyah/gh_arm_drv",
+            "//" + SOC_MODULES_REPO_PATH + "/oplus/kernel/boot:oplus_bsp_bootmode",
         ],
+        local_defines = ["OPLUS_FEATURE_CHG_BASIC"],
     )
 
     registry.register(
@@ -1450,6 +1453,7 @@ def register_modules(registry):
         srcs = [
             # do not sort
             "drivers/soc/qcom/smp2p.c",
+            "drivers/soc/qcom/trace_smp2p.h",
         ],
         deps = [
             # do not sort
@@ -1594,7 +1598,11 @@ def register_modules(registry):
             "drivers/virt/gunyah/gh_msgq",
             "drivers/virt/gunyah/gh_dbl",
             "arch/arm64/gunyah/gh_arm_drv",
+            # Add for oplus mm feedback, CONFIG_OPLUS_FEATURE_MM_FEEDBACK
+            "//" + SOC_MODULES_REPO_PATH + "/oplus/kernel/multimedia/feedback/bazel:oplus_mm_kevent_fb",
         ],
+        # Add for oplus config
+        copts = ["-DCONFIG_OPLUS_FEATURE_MM_FEEDBACK"],
     )
 
     registry.register(
