@@ -165,7 +165,10 @@ ddk_headers(
     hdrs = [
         # do not sort
         ":additional_msm_headers_aarch64_globs",
-    ],
+    ]+ select({
+        "//build/kernel/kleaf:allow_ddk_unsafe_headers_set": [":unsafe_headers_qcom_group"],
+        "//conditions:default": [],
+    }),
     linux_includes = [
         "arch/arm64/include",
         "arch/arm64/include/uapi",
