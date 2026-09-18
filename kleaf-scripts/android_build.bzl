@@ -86,6 +86,10 @@ def define_single_android_build(
             else:
                 fail("Library target {} does not match stem {}_".format(t, stem))
 
+    # Use the same external modules for installation and distribution.
+    external_modules = define_oplus_ddk_modules(stem, name, variant)
+    external_modules += define_techpack_modules(stem, name, variant)
+
     modules = registry.define_modules(
         stem,
         config_fragment,
@@ -94,6 +98,7 @@ def define_single_android_build(
         implicit_config_fragment,
         config_path = config_path,
         library_names = library_names,
+        extra_install_modules = external_modules,
     )
 
     hermetic_genrule(
@@ -364,9 +369,6 @@ def define_single_android_build(
 
         if board_bc_extras:
             dist_data.append("{}_extra_bootconfig".format(stem))
-
-    dist_data.extend(define_techpack_modules(stem, name, variant))
-    dist_data.extend(define_oplus_ddk_modules(stem, name, variant))
 
     copy_to_dist_dir(
         name = "{}_dist".format(stem),
