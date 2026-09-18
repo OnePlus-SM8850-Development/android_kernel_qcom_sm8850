@@ -3104,6 +3104,7 @@ static const struct adsp_data canoe_adsp_resource = {
 	.uses_elf64 = true,
 	.crash_reason_stack = 660,
 	.smem_host_id = 2,
+	.auto_boot = true,
 };
 
 static const struct adsp_data canoe_cdsp_resource = {
@@ -3120,6 +3121,7 @@ static const struct adsp_data canoe_cdsp_resource = {
 	.uses_elf64 = true,
 	.crash_reason_stack = 660,
 	.smem_host_id = 5,
+	.auto_boot = true,
 };
 
 static const struct adsp_data canoe_mpss_resource = {
@@ -3153,6 +3155,7 @@ static const struct adsp_data canoe_soccp_resource = {
 	.ssr_name = "soccp",
 	.sysmon_name = "soccp",
 	.early_boot = true,
+	.auto_boot = true,
 };
 
 static const struct adsp_data ravelin_adsp_resource = {
