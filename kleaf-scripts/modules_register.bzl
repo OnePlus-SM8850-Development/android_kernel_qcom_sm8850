@@ -1,5 +1,4 @@
 load(":soc_repo_path.bzl", "SOC_MODULES_REPO_PATH")
-load("//vendor/qcom/sm8850-modules/oplus/bazel:oplus_modules.bzl", "get_oplus_ddk_modules")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(
     "//build/kernel/kleaf:kernel.bzl",
@@ -115,7 +114,6 @@ def _generate_ddk_target(
             else:
                 phony_configurations.append(obj)
 
-    oplus_install_deps = {}
     for module in matched_configurations:
         module_deps = [":{}".format(module_names.get(dep)) for dep in module.deps if module_names.get(dep)]
         library_deps = []
@@ -126,13 +124,7 @@ def _generate_ddk_target(
 
         deps = module_deps + library_deps
         deps += [":{}_{}".format(target_variant, dep) for dep in module.hook_deps]
-        # add oplus module deps
-        for dep in module.deps:
-            if dep.startswith("//" + SOC_MODULES_REPO_PATH + "/oplus"):
-                resolved_dep = dep.replace("{target_variant}", target_variant)
-                deps.append(resolved_dep)
-                oplus_install_deps[resolved_dep] = True
-
+ 
         src_hdrs = [src for src in module.srcs if src.endswith(".h")]
         includes = (module.includes or []) + {paths.dirname(hdr): "" for hdr in src_hdrs}.keys()
 
@@ -165,33 +157,9 @@ def _generate_ddk_target(
         visibility = ["//visibility:public"],
     )
 
-    install_modules = [":{}_all_modules".format(target_variant)] + oplus_install_deps.keys()
-
-    # kernel_modules_install does not recursively install DDK dependencies.
-    # Install the individual Oplus DDK modules instead of the aggregate
-    # *_oplus_modules filegroup, because the filegroup does not provide
-    # KernelModuleInfo/GcovInfo.
-    if target_variant == "canoe_perf":
-        for module in get_oplus_ddk_modules(
-            target = target_variant,
-            msm_target = "canoe",
-            variant = "perf",
-        ):
-            if module not in install_modules:
-                install_modules.append(module)
-
-        # camera_extension.ko depends on the Qualcomm camera DDK module.
-        camera_module = "//{}/qcom/opensource/camera-kernel:{}_camera".format(
-            SOC_MODULES_REPO_PATH,
-            target_variant,
-        )
-        if camera_module not in install_modules:
-            install_modules.append(camera_module)
-
     kernel_modules_install(
         name = "{}_modules_install".format(target_variant),
-        # DDK build dependencies are not automatically installed.
-        kernel_modules = install_modules,
+        kernel_modules = [":{}_all_modules".format(target_variant)],
         outs = ["modules.dep"],
     )
 

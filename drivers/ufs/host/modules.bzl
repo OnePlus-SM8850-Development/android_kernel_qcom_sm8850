@@ -55,8 +55,6 @@ def register_modules(registry):
             "drivers/virt/gunyah/gh_msgq",
             "drivers/virt/gunyah/gh_dbl",
             "arch/arm64/gunyah/gh_arm_drv",
-            # Include the UFS provider dependency in the modules installation.
-            "//" + SOC_MODULES_REPO_PATH + "/oplus/kernel/device_info/device_info/bazel:device_info",
             "//" + SOC_MODULES_REPO_PATH + "/oplus/kernel/storage:ufs-oplus-dbg",
         ],
     )
