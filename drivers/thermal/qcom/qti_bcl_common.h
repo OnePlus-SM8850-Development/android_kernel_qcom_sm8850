@@ -31,6 +31,7 @@ enum bcl_dev_type {
 };
 
 struct bcl_device;
+struct bcl_dynamic_vbat;
 
 struct bcl_data_history {
 	uint32_t vbat;
@@ -105,6 +106,7 @@ struct bcl_device {
 	struct bcl_lvl_stats		stats[MAX_BCL_LVL_COUNT];
 	const struct bcl_desc		*desc;
 	struct notifier_block		nb;
+	struct bcl_dynamic_vbat		*dynamic_vbat;
 };
 
 void bcl_stats_init(char *bcl_name, struct bcl_device *bcl_perph,

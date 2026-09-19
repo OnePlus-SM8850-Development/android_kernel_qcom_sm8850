@@ -17,6 +17,7 @@
 #include <linux/slab.h>
 #include <linux/nvmem-consumer.h>
 #include <linux/ipc_logging.h>
+#include <linux/power_supply.h>
 #include "thermal_zone_internal.h"
 #include "qti_bcl_common.h"
 
@@ -138,6 +139,27 @@ struct bcl_desc {
 	bool batt_conf_valid;
 	bool one_byte_reg;
 };
+
+/* OPlus tables contain a temperature (deci-Celsius) and three limits (mV). */
+struct bcl_vbat_range {
+	s32 temp;
+	u32 mv[REG_MAX];
+};
+
+struct bcl_dynamic_vbat {
+	struct bcl_device *bcl;
+	struct notifier_block psy_nb;
+	struct work_struct work;
+	int num_ranges;
+	int current_range;
+	struct bcl_vbat_range ranges[];
+};
+
+/* A PMIC with its own OPlus table must not follow another PMIC's limits. */
+static bool bcl_owns_vbat_thresholds(struct bcl_device *bcl)
+{
+	return bcl->desc->vbat_zone_enabled || bcl->dynamic_vbat;
+}
 
 static char bcl_int_names[BCL_TYPE_MAX][25] = {
 	"bcl-ibat-lvl0",
@@ -616,6 +638,116 @@ static int bcl_set_adc_value(struct bcl_device *bcl_perph,
 	return ret;
 }
 
+static void bcl_dynamic_vbat_work(struct work_struct *work)
+{
+	struct bcl_dynamic_vbat *dynamic =
+		container_of(work, struct bcl_dynamic_vbat, work);
+	struct bcl_device *bcl = dynamic->bcl;
+	struct power_supply *psy;
+	union power_supply_propval temp;
+	int range, i, val, ret;
+
+	psy = power_supply_get_by_name("battery");
+	if (!psy)
+		return;
+	ret = power_supply_get_property(psy, POWER_SUPPLY_PROP_TEMP, &temp);
+	power_supply_put(psy);
+	if (ret)
+		return;
+
+	for (range = 0; range < dynamic->num_ranges - 1; range++)
+		if (temp.intval <= dynamic->ranges[range].temp)
+			break;
+
+	mutex_lock(&bcl->param[BCL_VBAT_LVL0].state_trans_lock);
+	if (range == dynamic->current_range)
+		goto unlock;
+
+	/* Keep the range invalid on failure so the next notification retries. */
+	dynamic->current_range = -1;
+	for (i = 0; i < REG_MAX; i++) {
+		int mv = dynamic->ranges[range].mv[i];
+
+		ret = bcl_set_adc_value(bcl, i, mv, &val);
+		if (ret) {
+			dev_err_ratelimited(bcl->dev,
+				"Failed to set dynamic VBAT level %d: %d\n", i, ret);
+			goto unlock;
+		}
+		blocking_notifier_call_chain(&bcl_pmic5_notifier, i, &mv);
+	}
+	dynamic->current_range = range;
+unlock:
+	mutex_unlock(&bcl->param[BCL_VBAT_LVL0].state_trans_lock);
+}
+
+static int bcl_battery_callback(struct notifier_block *nb,
+			       unsigned long event, void *data)
+{
+	struct bcl_dynamic_vbat *dynamic =
+		container_of(nb, struct bcl_dynamic_vbat, psy_nb);
+	struct power_supply *psy = data;
+
+	if (event == PSY_EVENT_PROP_CHANGED && !strcmp(psy->desc->name, "battery"))
+		queue_work(system_freezable_wq, &dynamic->work);
+
+	return NOTIFY_OK;
+}
+
+static void bcl_dynamic_vbat_stop(void *data)
+{
+	struct bcl_dynamic_vbat *dynamic = data;
+
+	power_supply_unreg_notifier(&dynamic->psy_nb);
+	cancel_work_sync(&dynamic->work);
+}
+
+static int bcl_parse_dynamic_vbat(struct bcl_device *bcl)
+{
+	struct device_node *np = bcl->dev->of_node;
+	struct bcl_dynamic_vbat *dynamic;
+	int cells, count, i, j, ret;
+	u32 row[1 + REG_MAX];
+
+	if (!of_property_read_bool(np, "bcl,support_dynamic_vbat"))
+		return 0;
+	if (bcl->bcl_monitor_type == BCL_MON_IBAT_ONLY)
+		return -EINVAL;
+
+	cells = of_property_count_u32_elems(np, "bcl,dynamic_vbat_data");
+	if (cells <= 0 || cells % ARRAY_SIZE(row))
+		return -EINVAL;
+	count = cells / ARRAY_SIZE(row);
+	dynamic = devm_kzalloc(bcl->dev, struct_size(dynamic, ranges, count), GFP_KERNEL);
+	if (!dynamic)
+		return -ENOMEM;
+
+	for (i = 0; i < count; i++) {
+		for (j = 0; j < ARRAY_SIZE(row); j++) {
+			ret = of_property_read_u32_index(np, "bcl,dynamic_vbat_data",
+						 i * ARRAY_SIZE(row) + j, &row[j]);
+			if (ret)
+				return ret;
+		}
+		dynamic->ranges[i].temp = (s32)row[0];
+		if (i && dynamic->ranges[i].temp <= dynamic->ranges[i - 1].temp)
+			return -EINVAL;
+		for (j = 0; j < REG_MAX; j++) {
+			if (row[j + 1] < bcl->desc->vcmp_thresh_base ||
+			    row[j + 1] > bcl->desc->vcmp_thresh_max)
+				return -EINVAL;
+			dynamic->ranges[i].mv[j] = row[j + 1];
+		}
+	}
+	dynamic->bcl = bcl;
+	dynamic->num_ranges = count;
+	dynamic->current_range = -1;
+	dynamic->psy_nb.notifier_call = bcl_battery_callback;
+	INIT_WORK(&dynamic->work, bcl_dynamic_vbat_work);
+	bcl->dynamic_vbat = dynamic;
+	return 0;
+}
+
 static int bcl_config_vph_cb(struct notifier_block *nb,
 				unsigned long val, void *data)
 {
@@ -644,13 +776,16 @@ static int bcl_write_vbat_tz(struct thermal_zone_device *tzd,
 	trip_id = trip_to_trip_desc(trip) - tzd->trips;
 
 	mutex_lock(&bat_data->state_trans_lock);
+	/* A thermal-core write invalidates the cached temperature range. */
+	if (bat_data->dev->dynamic_vbat)
+		bat_data->dev->dynamic_vbat->current_range = -1;
 	ret = bcl_set_adc_value(bat_data->dev, trip_id, temp, &val);
 	if (ret < 0) {
 		pr_err("Fail to set vbat regs, err: %d\n", ret);
 		goto exit;
 	}
 
-	if (bat_data->dev->desc->vbat_zone_enabled)
+	if (bcl_owns_vbat_thresholds(bat_data->dev))
 		blocking_notifier_call_chain(&bcl_pmic5_notifier, trip_id, (void *)&temp);
 
 	pr_debug("trip_id: %d, vbat:%d mV, ADC: 0x%x\n", trip_id, temp, val);
@@ -1268,7 +1403,7 @@ static void bcl_remove(struct platform_device *pdev)
 			continue;
 	}
 
-	if (!bcl_perph->desc->vbat_zone_enabled)
+	if (!bcl_owns_vbat_thresholds(bcl_perph))
 		bcl_pmic5_notifier_unregister(&bcl_perph->nb);
 }
 
@@ -1311,6 +1446,12 @@ static int bcl_probe(struct platform_device *pdev)
 		return err;
 	}
 
+	err = bcl_parse_dynamic_vbat(bcl_perph);
+	if (err) {
+		bcl_device_ct--;
+		return dev_err_probe(&pdev->dev, err, "Invalid dynamic VBAT configuration\n");
+	}
+
 	switch (bcl_perph->bcl_monitor_type) {
 	case BCL_MON_DEFAULT:
 		bcl_probe_vbat(pdev, bcl_perph);
@@ -1330,9 +1471,21 @@ static int bcl_probe(struct platform_device *pdev)
 	bcl_probe_lvls(pdev, bcl_perph);
 	bcl_configure_bcl_peripheral(bcl_perph);
 
-	if (!bcl_perph->desc->vbat_zone_enabled) {
-		bcl_pmic5_notifier_register(&bcl_perph->nb);
+	if (bcl_perph->dynamic_vbat) {
+		err = power_supply_reg_notifier(&bcl_perph->dynamic_vbat->psy_nb);
+		if (err) {
+			bcl_device_ct--;
+			return err;
+		}
+		err = devm_add_action_or_reset(&pdev->dev, bcl_dynamic_vbat_stop,
+					      bcl_perph->dynamic_vbat);
+		if (err) {
+			bcl_device_ct--;
+			return err;
+		}
+	} else if (!bcl_owns_vbat_thresholds(bcl_perph)) {
 		bcl_perph->nb.notifier_call = bcl_config_vph_cb;
+		bcl_pmic5_notifier_register(&bcl_perph->nb);
 	}
 
 	ret = bcl_write_register(bcl_perph, BPM_EN_OFFSET, BIT(7));
@@ -1351,6 +1504,9 @@ static int bcl_probe(struct platform_device *pdev)
 		pr_err("%s: unable to create IPC Logging for %s\n",
 					__func__, bcl_name);
 	bcl_stats_init(bcl_name, bcl_perph, MAX_BCL_LVL_COUNT);
+
+	if (bcl_perph->dynamic_vbat)
+		queue_work(system_freezable_wq, &bcl_perph->dynamic_vbat->work);
 
 	return 0;
 }
@@ -1406,6 +1562,12 @@ static int bcl_restore(struct device *dev)
 			thermal_zone_device_update(bcl_data->tz_dev, THERMAL_DEVICE_UP);
 	}
 	bcl_configure_bcl_peripheral(bcl_perph);
+	if (bcl_perph->dynamic_vbat) {
+		mutex_lock(&bcl_perph->param[BCL_VBAT_LVL0].state_trans_lock);
+		bcl_perph->dynamic_vbat->current_range = -1;
+		mutex_unlock(&bcl_perph->param[BCL_VBAT_LVL0].state_trans_lock);
+		queue_work(system_freezable_wq, &bcl_perph->dynamic_vbat->work);
+	}
 
 	return 0;
 }
