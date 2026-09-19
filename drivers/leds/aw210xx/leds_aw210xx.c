@@ -3466,7 +3466,11 @@ static ssize_t aw210xx_led_support_attr_show (struct device *dev,
 	struct aw210xx *led = container_of(led_cdev, struct aw210xx, cdev);
 
 //	return snprintf(buf, PAGE_SIZE, "%s-%d-white\n", LED_SUPPORT_TYPE, (int)led->cdev.max_brightness);
-	return snprintf(buf, PAGE_SIZE, "%s-%d\n",LED_SUPPORT_TYPE,led->cdev.max_brightness);
+	if (led->color_cal) {
+		return snprintf(buf, PAGE_SIZE, "%s-%d-cal\n", LED_SUPPORT_TYPE, led->cdev.max_brightness);
+	} else {
+		return snprintf(buf, PAGE_SIZE, "%s-%d\n", LED_SUPPORT_TYPE, led->cdev.max_brightness);
+	}
 }
 
 static DEVICE_ATTR(support, 0664, aw210xx_led_support_attr_show, NULL);
@@ -4341,6 +4345,12 @@ static int aw210xx_parse_dt(struct device *dev, struct aw210xx *aw210xx,
 		AW_ERR("chipid set in dts: %02x \n", aw210xx->chipid);
 	}
 
+	ret = of_property_read_u32(np, "color_cal",
+			&aw210xx->color_cal);
+	if (ret < 0) {
+		AW_ERR("calibration unsupported\n");
+		aw210xx->color_cal = 0;
+	}
 	return 0;
 }
 

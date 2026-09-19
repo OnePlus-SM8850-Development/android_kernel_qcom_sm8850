@@ -408,6 +408,7 @@ struct aw210xx {
 	struct workqueue_struct *aw210_led_wq;
 	struct workqueue_struct *aw210_led_flow;
 	unsigned int boot_mode;
+	uint32_t color_cal;
 };
 
 /*********************************************************

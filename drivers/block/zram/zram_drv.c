@@ -1391,20 +1391,8 @@ static int zram_read_page(struct zram *zram, struct page *page, u32 index,
 	}
 
 	/* Should NEVER happen. Return bio error if it does. */
-	if (WARN_ON(ret < 0)) {
-		if (is_qpace_dev_available()) {
-#ifdef CONFIG_OPLUS_QPACE_RUS
-			if (oplus_test_mm_feature_disable(COMFD1_QPACE))
-				pr_err("Decompression failed! err=%d, page=%u\n", ret, index);
-			else
-				panic("Decompression failed! err=%d, page=%u\n", ret, index);
-#else
-			panic("Decompression failed! err=%d, page=%u\n", ret, index);
-#endif
-		} else {
-			pr_err("Decompression failed! err=%d, page=%u\n", ret, index);
-		}
-	}
+	if (WARN_ON(ret < 0))
+		panic("Decompression failed! err=%d, page=%u\n", ret, index);
 
 	return ret;
 }
